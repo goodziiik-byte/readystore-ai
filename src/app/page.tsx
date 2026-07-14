@@ -1,7 +1,7 @@
 "use client";
 
 import type { ScanResult } from "@/lib/scanner/types";
-import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, LockKeyhole, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 const examples = ["casanativa.mx", "ashaskin.in", "baliminigoods.id"];
@@ -75,6 +75,11 @@ export default function HomePage() {
           <p className="source-note">
             Source: Adobe Digital Insights, U.S. retail AI traffic and machine-readability report, Apr. 2026.
           </p>
+          <div className="trust-strip">
+            <span><ShieldCheck size={15} /> Public pages only</span>
+            <span><LockKeyhole size={15} /> No login required</span>
+            <span><Eye size={15} /> No checkout submission</span>
+          </div>
         </div>
 
         <HeroPreview loading={loading} />
@@ -90,6 +95,8 @@ export default function HomePage() {
       {!result && <MarketingSections />}
 
       {result && <Report result={result} />}
+
+      <SiteFooter />
     </main>
   );
 }
@@ -106,10 +113,11 @@ function Header() {
           <span>Commerce visibility for AI shoppers</span>
         </div>
       </div>
-      <div className="header-actions">
-        <span>WooCommerce first</span>
-        <span>Agentic commerce ready</span>
-      </div>
+      <nav className="site-nav" aria-label="Main navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#readiness-layer">Plugin</a>
+        <a href="mailto:hello@readystoreai.com">Contact</a>
+      </nav>
     </header>
   );
 }
@@ -209,7 +217,7 @@ function WooGap() {
 
 function ScanMethod() {
   return (
-    <section className="marketing-section scan-method">
+    <section className="marketing-section scan-method" id="how-it-works">
       <div className="section-copy">
         <span className="eyebrow">How diagnosis works</span>
         <h2>We scan more than the homepage.</h2>
@@ -227,7 +235,7 @@ function ScanMethod() {
 
 function ReadinessLayer() {
   return (
-    <section className="marketing-section layer-section">
+    <section className="marketing-section layer-section" id="readiness-layer">
       <div className="section-copy">
         <span className="eyebrow">After the scan</span>
         <h2>The plugin adds the missing AI readiness layer.</h2>
@@ -699,4 +707,29 @@ function paymentLabel(level: ScanResult["paymentVisibility"]["level"]): string {
 
 function labelize(key: string): string {
   return key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
+}
+
+function SiteFooter() {
+  return (
+    <footer className="site-footer">
+      <div className="footer-brand">
+        <div className="brand-mark footer-mark">
+          <Sparkles size={16} />
+        </div>
+        <div>
+          <strong>Readystore AI</strong>
+          <span>Built by Readystore Labs.</span>
+        </div>
+      </div>
+      <div className="footer-copy">
+        <p>AI readiness diagnostics for WooCommerce stores. We scan public storefront pages only.</p>
+        <a href="mailto:hello@readystoreai.com">hello@readystoreai.com</a>
+      </div>
+      <div className="footer-links">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <span>&copy; 2026 Readystore Labs. All rights reserved.</span>
+      </div>
+    </footer>
+  );
 }
