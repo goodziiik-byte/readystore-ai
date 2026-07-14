@@ -55,7 +55,7 @@ Readystore AI validation app:
 - Marketing landing page sections.
 - Production validation flow foundation.
 - Supabase scan/lead/report request persistence.
-- Resend email delivery with a simple PDF attachment.
+- Resend email delivery with a branded PDF attachment.
 
 ## Not in Scope Yet
 

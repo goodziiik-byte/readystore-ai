@@ -1,4 +1,5 @@
 import type { ScanResult } from "@/lib/scanner/types";
+import { buildReportPdf } from "@/lib/server/report-pdf";
 
 type LeadInput = {
   email: string;
@@ -146,7 +147,7 @@ export async function sendReportEmail(email: string, domain: string, result: Sca
     throw new Error("Resend is not configured.");
   }
 
-  const pdf = buildPdfReport(result);
+  const pdf = await buildReportPdf(result);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -250,57 +251,6 @@ function buildEmailHtml(domain: string, result: ScanResult, unsubscribeUrl: stri
   `;
 }
 
-function buildPdfReport(result: ScanResult) {
-  const lines = [
-    "Readystore AI Report",
-    "",
-    `Store: ${domainFromUrl(result.finalUrl || result.requestedUrl)}`,
-    `Score: ${result.score.toFixed(1)}/10`,
-    "",
-    result.merchantSummary.headline,
-    result.merchantSummary.body,
-    "",
-    "Top fixes:",
-    ...result.priorityFixes.slice(0, 5).map((fix, index) => `${index + 1}. ${fix.title} (${fix.impact} impact)`),
-    "",
-    "Readiness layers:",
-    ...result.readinessLayers.map((layer) => `${layer.title}: ${layer.status} | ${layer.estimatedLift}`),
-  ];
-
-  return minimalPdf(lines);
-}
-
-function minimalPdf(lines: string[]) {
-  const escapedLines = lines.map((line) => pdfEscape(line).slice(0, 110));
-  const textCommands = escapedLines.map((line, index) => {
-    const y = 760 - index * 18;
-    return `BT /F1 11 Tf 50 ${y} Td (${line}) Tj ET`;
-  }).join("\n");
-
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${Buffer.byteLength(textCommands)} >>\nstream\n${textCommands}\nendstream`,
-  ];
-
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xrefOffset = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
-  });
-  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-
-  return Buffer.from(pdf);
-}
-
 function domainFromUrl(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -315,8 +265,4 @@ function escapeHtml(value: string) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
-}
-
-function pdfEscape(value: string) {
-  return value.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
 }
