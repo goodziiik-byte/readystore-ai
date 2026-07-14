@@ -242,7 +242,7 @@ function buildEmailHtml(domain: string, result: ScanResult, unsubscribeUrl: stri
       </div>
       <h2 style="font-size:18px">Top fixes</h2>
       <ul>${fixes}</ul>
-      <p>The PDF report is attached. Reply to this email if you want early access to the WooCommerce plugin.</p>
+      <p>The PDF report is attached. You are now on the Readystore AI early access list.</p>
       <p style="margin-top:24px;color:#64748b;font-size:12px">
         No spam. We will only send the product launch announcement and early-access updates.
         <a href="${unsubscribeUrl}" style="color:#0c6b61">Unsubscribe</a>.
