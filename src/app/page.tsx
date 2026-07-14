@@ -299,6 +299,34 @@ function MiniFeature({ title, text }: { title: string; text: string }) {
 
 function Report({ result }: { result: ScanResult }) {
   const status = result.score >= 8.5 ? "AI-ready" : result.score >= 7 ? "Mostly ready" : result.score >= 5 ? "Needs fixes" : "Critical gaps";
+  const [email, setEmail] = useState("");
+  const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [reportMessage, setReportMessage] = useState("");
+
+  async function requestReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setReportStatus("sending");
+    setReportMessage("");
+
+    try {
+      const response = await fetch("/api/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, result }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "Unable to send report.");
+      }
+
+      setReportStatus("sent");
+      setReportMessage("Report sent. You are on the early access list.");
+    } catch (error) {
+      setReportStatus("error");
+      setReportMessage(error instanceof Error ? error.message : "Unable to send report.");
+    }
+  }
 
   return (
     <section className="report-stack">
@@ -317,6 +345,30 @@ function Report({ result }: { result: ScanResult }) {
           <Summary icon={<Globe2 size={18} />} label="JSON-LD" value={`${result.structuredData.jsonLdCount} blocks`} />
         </div>
       </div>
+
+      <section className="report-capture">
+        <div>
+          <span className="eyebrow">Get the full report</span>
+          <h2>Email yourself the PDF and join early access.</h2>
+          <p>We will send the readiness report, top fixes, and plugin waitlist confirmation.</p>
+        </div>
+        <form className="report-form" onSubmit={requestReport}>
+          <Mail size={18} />
+          <input
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="you@store.com"
+            aria-label="Email address"
+            type="email"
+            required
+          />
+          <button disabled={reportStatus === "sending"}>
+            {reportStatus === "sending" ? <Loader2 className="spin" size={17} /> : <ArrowRight size={17} />}
+            {reportStatus === "sending" ? "Sending" : "Send PDF"}
+          </button>
+        </form>
+        {reportMessage && <p className={`report-message ${reportStatus}`}>{reportMessage}</p>}
+      </section>
 
       <section className="card">
         <div className="card-header">

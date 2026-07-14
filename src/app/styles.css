@@ -631,6 +631,77 @@ p {
   margin-top: 18px;
 }
 
+.report-capture {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1fr);
+  gap: 18px;
+  align-items: center;
+  border: 1px solid #172033;
+  border-radius: 8px;
+  background: #fffdf8;
+  padding: 22px;
+  box-shadow: 8px 8px 0 #d7ff63;
+}
+
+.report-capture h2 {
+  margin-bottom: 8px;
+}
+
+.report-capture p {
+  margin-bottom: 0;
+}
+
+.report-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #b8c1d0;
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+}
+
+.report-form input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #111827;
+}
+
+.report-form button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #172033;
+  color: #ffffff;
+}
+
+.report-form button:disabled {
+  opacity: 0.72;
+}
+
+.report-message {
+  grid-column: 2;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.report-message.sent {
+  color: #166534;
+}
+
+.report-message.error {
+  color: #991b1b;
+}
+
 .report-hero {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(260px, 0.8fr);
@@ -1198,6 +1269,8 @@ meter {
 
   .scan-form,
   .report-hero,
+  .report-capture,
+  .report-form,
   .two-col,
   .page-evidence,
   .priority-row,
@@ -1244,6 +1317,10 @@ meter {
   .layer-diagram > svg {
     justify-self: center;
     transform: rotate(90deg);
+  }
+
+  .report-message {
+    grid-column: 1;
   }
 
   .visibility-grid {

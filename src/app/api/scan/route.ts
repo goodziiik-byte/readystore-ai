@@ -1,4 +1,5 @@
 import { scanStore } from "@/lib/scanner/scan";
+import { persistScan } from "@/lib/server/integrations";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -6,6 +7,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const url = typeof body.url === "string" ? body.url : "";
     const result = await scanStore(url);
+
+    persistScan(result).catch((error) => {
+      console.error("Unable to persist scan", error);
+    });
 
     return NextResponse.json(result);
   } catch (error) {
