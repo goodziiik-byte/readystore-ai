@@ -346,28 +346,34 @@ function Report({ result }: { result: ScanResult }) {
         </div>
       </div>
 
-      <section className="report-capture">
+      <section className="report-capture" id="report-capture">
         <div>
           <span className="eyebrow">Get the full report</span>
           <h2>Email yourself the PDF and join early access.</h2>
           <p>We will send the readiness report, top fixes, and plugin waitlist confirmation.</p>
         </div>
-        <form className="report-form" onSubmit={requestReport}>
-          <Mail size={18} />
-          <input
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="you@store.com"
-            aria-label="Email address"
-            type="email"
-            required
-          />
-          <button disabled={reportStatus === "sending"}>
-            {reportStatus === "sending" ? <Loader2 className="spin" size={17} /> : <ArrowRight size={17} />}
-            {reportStatus === "sending" ? "Sending" : "Send PDF"}
-          </button>
-        </form>
-        {reportMessage && <p className={`report-message ${reportStatus}`}>{reportMessage}</p>}
+        <div className="report-capture-form">
+          <form className="report-form" onSubmit={requestReport}>
+            <Mail size={18} />
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@store.com"
+              aria-label="Email address"
+              type="email"
+              required
+            />
+            <button disabled={reportStatus === "sending"}>
+              {reportStatus === "sending" ? <Loader2 className="spin" size={17} /> : <ArrowRight size={17} />}
+              {reportStatus === "sending" ? "Sending" : "Send PDF"}
+            </button>
+          </form>
+          <p className="email-disclaimer">
+            No spam. We will only send this report, the product launch announcement, and early-access updates.
+            You can unsubscribe anytime.
+          </p>
+          {reportMessage && <p className={`report-message ${reportStatus}`}>{reportMessage}</p>}
+        </div>
       </section>
 
       <section className="card">
@@ -630,7 +636,7 @@ function PluginValueBlock({ result }: { result: ScanResult }) {
           price changes, payment updates, and policy changes do not quietly break AI readiness again.
         </p>
         <div className="value-actions">
-          <button>Join waitlist and get PDF report <Mail size={17} /></button>
+          <button type="button" onClick={scrollToReportCapture}>Join waitlist and get PDF report <Mail size={17} /></button>
           <span>Estimated readiness lift: {liftText}</span>
         </div>
       </div>
@@ -666,6 +672,10 @@ function PluginValueBlock({ result }: { result: ScanResult }) {
       </div>
     </section>
   );
+}
+
+function scrollToReportCapture() {
+  document.getElementById("report-capture")?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 function ValueCard({ icon, title, text, outcome }: { icon: React.ReactNode; title: string; text: string; outcome: string }) {

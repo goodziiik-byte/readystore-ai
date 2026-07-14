@@ -139,6 +139,8 @@ export async function sendReportEmail(email: string, domain: string, result: Sca
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.REPORT_FROM_EMAIL ?? "Readystore AI <reports@readystoreai.com>";
   const replyTo = process.env.REPORT_REPLY_TO;
+  const unsubscribeEmail = replyTo ?? "reports@readystoreai.com";
+  const unsubscribeUrl = `mailto:${unsubscribeEmail}?subject=Unsubscribe%20Readystore%20AI`;
 
   if (!apiKey) {
     throw new Error("Resend is not configured.");
@@ -156,7 +158,10 @@ export async function sendReportEmail(email: string, domain: string, result: Sca
       to: [email],
       reply_to: replyTo,
       subject: `AI Readiness Report for ${domain}`,
-      html: buildEmailHtml(domain, result),
+      headers: {
+        "List-Unsubscribe": `<${unsubscribeUrl}>`,
+      },
+      html: buildEmailHtml(domain, result, unsubscribeUrl),
       attachments: [
         {
           filename: `readystore-ai-report-${domain}.pdf`,
@@ -222,7 +227,7 @@ async function supabaseGet<T = unknown>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function buildEmailHtml(domain: string, result: ScanResult) {
+function buildEmailHtml(domain: string, result: ScanResult, unsubscribeUrl: string) {
   const fixes = result.priorityFixes.slice(0, 3).map((fix) => `<li><strong>${escapeHtml(fix.title)}</strong> — ${escapeHtml(fix.reason)}</li>`).join("");
 
   return `
@@ -237,6 +242,10 @@ function buildEmailHtml(domain: string, result: ScanResult) {
       <h2 style="font-size:18px">Top fixes</h2>
       <ul>${fixes}</ul>
       <p>The PDF report is attached. Reply to this email if you want early access to the WooCommerce plugin.</p>
+      <p style="margin-top:24px;color:#64748b;font-size:12px">
+        No spam. We will only send the product launch announcement and early-access updates.
+        <a href="${unsubscribeUrl}" style="color:#0c6b61">Unsubscribe</a>.
+      </p>
     </div>
   `;
 }
