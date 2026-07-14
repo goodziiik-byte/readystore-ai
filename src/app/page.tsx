@@ -1,12 +1,18 @@
 "use client";
 
 import type { ScanResult } from "@/lib/scanner/types";
+import { defaultLocale, getDictionary, localeLabels, localeMarkets, locales, type Dictionary, type Locale } from "@/lib/i18n";
 import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, LockKeyhole, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
 import { FormEvent, useState } from "react";
 
 const examples = ["casanativa.mx", "ashaskin.in", "baliminigoods.id"];
 
 export default function HomePage() {
+  return <ReadystorePage locale={defaultLocale} />;
+}
+
+export function ReadystorePage({ locale }: { locale: Locale }) {
+  const copy = getDictionary(locale);
   const [url, setUrl] = useState("https://woocommerce.com");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
@@ -40,31 +46,26 @@ export default function HomePage() {
 
   return (
     <main className="page-shell">
-      <Header />
+      <Header copy={copy} locale={locale} />
 
       <section className="scanner-panel hero-panel">
         <div className="hero-content">
           <div className="scanner-copy">
-            <span className="eyebrow">AI readiness scanner for WooCommerce</span>
-            <h1>AI shopping traffic is growing. Make sure your store can be read.</h1>
-            <p>
-              Readystore AI checks whether ChatGPT, Google AI, and shopping agents can understand
-              your products, prices, stock, shipping, returns, local payment context, and checkout signals.
-            </p>
+            <span className="eyebrow">{copy.hero.eyebrow}</span>
+            <h1>{copy.hero.title}</h1>
+            <p>{copy.hero.body}</p>
           </div>
 
           <div className="hero-stats">
-            <StatCard value="+393%" label="AI retail traffic YoY" />
-            <StatCard value="+42%" label="AI traffic conversion lift" />
-            <StatCard value="66%" label="Avg. product-page machine readability" />
+            {copy.hero.stats.map((stat) => <StatCard key={stat.label} value={stat.value} label={stat.label} />)}
           </div>
 
           <form className="scan-form" onSubmit={submit}>
             <Search size={20} />
-            <input value={url} onChange={(event) => setUrl(event.target.value)} aria-label="Store URL" />
+            <input value={url} onChange={(event) => setUrl(event.target.value)} aria-label={copy.hero.inputLabel} />
             <button disabled={loading}>
               {loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />}
-              {loading ? "Scanning" : "Scan my store"}
+              {loading ? copy.hero.scanning : copy.hero.scanButton}
             </button>
           </form>
           <div className="example-row">
@@ -72,17 +73,15 @@ export default function HomePage() {
               <button key={example} onClick={() => setUrl(`https://${example}`)}>{example}</button>
             ))}
           </div>
-          <p className="source-note">
-            Source: Adobe Digital Insights, U.S. retail AI traffic and machine-readability report, Apr. 2026.
-          </p>
+          <p className="source-note">{copy.hero.source}</p>
           <div className="trust-strip">
-            <span><ShieldCheck size={15} /> Public pages only</span>
-            <span><LockKeyhole size={15} /> No login required</span>
-            <span><Eye size={15} /> No checkout submission</span>
+            <span><ShieldCheck size={15} /> {copy.hero.trust[0]}</span>
+            <span><LockKeyhole size={15} /> {copy.hero.trust[1]}</span>
+            <span><Eye size={15} /> {copy.hero.trust[2]}</span>
           </div>
         </div>
 
-        <HeroPreview loading={loading} />
+        <HeroPreview loading={loading} copy={copy} />
       </section>
 
       {error && (
@@ -92,16 +91,16 @@ export default function HomePage() {
         </section>
       )}
 
-      {!result && <MarketingSections />}
+      {!result && <MarketingSections copy={copy} />}
 
-      {result && <Report result={result} />}
+      {result && <Report result={result} copy={copy} locale={locale} />}
 
-      <SiteFooter />
+      <SiteFooter copy={copy} locale={locale} />
     </main>
   );
 }
 
-function Header() {
+function Header({ copy, locale }: { copy: Dictionary; locale: Locale }) {
   return (
     <header className="site-header">
       <div className="brand-lockup">
@@ -110,41 +109,54 @@ function Header() {
         </div>
         <div>
           <strong>Readystore AI</strong>
-          <span>Commerce visibility for AI shoppers</span>
+          <span>{copy.brand.tagline}</span>
         </div>
       </div>
       <nav className="site-nav" aria-label="Main navigation">
-        <a href="#how-it-works">How it works</a>
-        <a href="#readiness-layer">Plugin</a>
-        <a href="mailto:hello@readystoreai.com">Contact</a>
+        <a href="#how-it-works">{copy.nav.howItWorks}</a>
+        <a href="#readiness-layer">{copy.nav.plugin}</a>
+        <a href="mailto:hello@readystoreai.com">{copy.nav.contact}</a>
+        <LocaleSwitcher locale={locale} />
       </nav>
     </header>
   );
 }
 
-function HeroPreview({ loading }: { loading: boolean }) {
+function LocaleSwitcher({ locale }: { locale: Locale }) {
   return (
-    <aside className="hero-preview" aria-label="Readystore AI readiness preview">
+    <div className="locale-switcher" aria-label="Language switcher">
+      {locales.map((item) => (
+        <a className={item === locale ? "active" : ""} href={item === defaultLocale ? "/" : `/${item}`} key={item}>
+          {localeLabels[item]}
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function HeroPreview({ loading, copy }: { loading: boolean; copy: Dictionary }) {
+  return (
+    <aside className="hero-preview" aria-label={copy.preview.aria}>
       <div className="preview-topline">
-        <span>Live readiness model</span>
-        <strong>{loading ? "Scanning..." : "Before plugin"}</strong>
+        <span>{copy.preview.topline}</span>
+        <strong>{loading ? copy.preview.scanning : copy.preview.before}</strong>
       </div>
       <div className="preview-score">
         <div>
-          <span>AI clarity score</span>
+          <span>{copy.preview.score}</span>
           <strong>6.4</strong>
         </div>
         <meter min={0} max={10} value={6.4} />
       </div>
       <div className="preview-path">
-        <PreviewStep icon={<Store size={16} />} title="Catalog" status="Readable" tone="good" />
-        <PreviewStep icon={<ShieldCheck size={16} />} title="Trust policies" status="Missing" tone="warn" />
-        <PreviewStep icon={<CreditCard size={16} />} title="Payment context" status="Partial" tone="mid" />
-        <PreviewStep icon={<Globe2 size={16} />} title="AI discovery" status="Not found" tone="warn" />
+        <PreviewStep icon={<Store size={16} />} title={copy.preview.steps[0].title} status={copy.preview.steps[0].status} tone="good" />
+        <PreviewStep icon={<ShieldCheck size={16} />} title={copy.preview.steps[1].title} status={copy.preview.steps[1].status} tone="warn" />
+        <PreviewStep icon={<CreditCard size={16} />} title={copy.preview.steps[2].title} status={copy.preview.steps[2].status} tone="mid" />
+        <PreviewStep icon={<Globe2 size={16} />} title={copy.preview.steps[3].title} status={copy.preview.steps[3].status} tone="warn" />
       </div>
       <div className="preview-outcome">
         <TrendingUp size={17} />
-        <p>Stores that expose clean product, policy, payment, and freshness signals are easier for AI shoppers to compare and recommend.</p>
+        <p>{copy.preview.outcome}</p>
       </div>
     </aside>
   );
@@ -169,89 +181,88 @@ function StatCard({ value, label }: { value: string; label: string }) {
   );
 }
 
-function MarketingSections() {
+function MarketingSections({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-stack">
-      <MarketShift />
-      <WooGap />
-      <ScanMethod />
-      <ReadinessLayer />
+      <MarketShift copy={copy} />
+      <WooGap copy={copy} />
+      <ScanMethod copy={copy} />
+      <ReadinessLayer copy={copy} />
     </section>
   );
 }
 
-function MarketShift() {
+function MarketShift({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section market-shift">
       <div className="section-copy">
-        <span className="eyebrow">Market shift</span>
-        <h2>AI shoppers are becoming a new acquisition channel.</h2>
-        <p>They compare products before your analytics ever sees a visitor. If the store is hard to read, it can be skipped early.</p>
+        <span className="eyebrow">{copy.marketing.shift.eyebrow}</span>
+        <h2>{copy.marketing.shift.title}</h2>
+        <p>{copy.marketing.shift.body}</p>
       </div>
       <div className="flow-strip" aria-label="AI shopping journey">
-        <FlowNode icon={<Search size={17} />} title="Search" />
-        <FlowNode icon={<Bot size={17} />} title="AI answer" />
-        <FlowNode icon={<FileSearch size={17} />} title="Compare" />
-        <FlowNode icon={<Store size={17} />} title="Recommend" />
-        <FlowNode icon={<CreditCard size={17} />} title="Checkout" />
+        <FlowNode icon={<Search size={17} />} title={copy.marketing.shift.flow[0]} />
+        <FlowNode icon={<Bot size={17} />} title={copy.marketing.shift.flow[1]} />
+        <FlowNode icon={<FileSearch size={17} />} title={copy.marketing.shift.flow[2]} />
+        <FlowNode icon={<Store size={17} />} title={copy.marketing.shift.flow[3]} />
+        <FlowNode icon={<CreditCard size={17} />} title={copy.marketing.shift.flow[4]} />
       </div>
     </section>
   );
 }
 
-function WooGap() {
+function WooGap({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section woo-gap">
       <div className="section-copy">
-        <span className="eyebrow">The WooCommerce gap</span>
-        <h2>Humans see a store. AI needs signals.</h2>
-        <p>A product page can look fine and still miss policy, payment, discovery, or freshness context.</p>
+        <span className="eyebrow">{copy.marketing.gap.eyebrow}</span>
+        <h2>{copy.marketing.gap.title}</h2>
+        <p>{copy.marketing.gap.body}</p>
       </div>
       <div className="comparison-grid">
-        <SignalColumn title="Human shoppers see" items={["Photos", "Price", "Add to cart", "Delivery text"]} />
-        <SignalColumn highlighted title="AI shoppers need" items={["Product schema", "Stock status", "Policy metadata", "Payment context"]} />
+        <SignalColumn title={copy.marketing.gap.humanTitle} items={copy.marketing.gap.humanItems} />
+        <SignalColumn highlighted title={copy.marketing.gap.aiTitle} items={copy.marketing.gap.aiItems} />
       </div>
     </section>
   );
 }
 
-function ScanMethod() {
+function ScanMethod({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section scan-method" id="how-it-works">
       <div className="section-copy">
-        <span className="eyebrow">How diagnosis works</span>
-        <h2>We scan more than the homepage.</h2>
-        <p>Readystore AI checks the surfaces an agent would use to decide whether your store is safe to recommend.</p>
+        <span className="eyebrow">{copy.marketing.diagnosis.eyebrow}</span>
+        <h2>{copy.marketing.diagnosis.title}</h2>
+        <p>{copy.marketing.diagnosis.body}</p>
       </div>
       <div className="method-grid">
-        <MethodCard step="01" title="Discover" text="Products, policies, checkout hints." />
-        <MethodCard step="02" title="Extract" text="Schema, prices, stock, payments." />
-        <MethodCard step="03" title="Score" text="Catalog, trust, checkout, discovery." />
-        <MethodCard step="04" title="Fix" text="Ranked actions and plugin coverage." />
+        {copy.marketing.diagnosis.cards.map((card) => (
+          <MethodCard key={card.step} step={card.step} title={card.title} text={card.text} />
+        ))}
       </div>
     </section>
   );
 }
 
-function ReadinessLayer() {
+function ReadinessLayer({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section layer-section" id="readiness-layer">
       <div className="section-copy">
-        <span className="eyebrow">After the scan</span>
-        <h2>The plugin adds the missing AI readiness layer.</h2>
-        <p>It keeps WooCommerce readable as products, prices, stock, payments, and policies change.</p>
+        <span className="eyebrow">{copy.marketing.layer.eyebrow}</span>
+        <h2>{copy.marketing.layer.title}</h2>
+        <p>{copy.marketing.layer.body}</p>
       </div>
       <div className="layer-diagram">
-        <DiagramBlock icon={<Store size={18} />} title="WooCommerce store" />
+        <DiagramBlock icon={<Store size={18} />} title={copy.marketing.layer.diagram[0]} />
         <ArrowRight size={20} />
-        <DiagramBlock active icon={<Layers3 size={18} />} title="Readystore AI layer" />
+        <DiagramBlock active icon={<Layers3 size={18} />} title={copy.marketing.layer.diagram[1]} />
         <ArrowRight size={20} />
-        <DiagramBlock icon={<Bot size={18} />} title="AI shopping agents" />
+        <DiagramBlock icon={<Bot size={18} />} title={copy.marketing.layer.diagram[2]} />
       </div>
       <div className="mini-feature-grid">
-        <MiniFeature title="AI discovery" text="llms.txt and store profile." />
-        <MiniFeature title="Clean context" text="Products, policies, payments." />
-        <MiniFeature title="Ongoing reports" text="Catch readiness drift." />
+        {copy.marketing.layer.features.map((feature) => (
+          <MiniFeature key={feature.title} title={feature.title} text={feature.text} />
+        ))}
       </div>
     </section>
   );
@@ -305,8 +316,14 @@ function MiniFeature({ title, text }: { title: string; text: string }) {
   );
 }
 
-function Report({ result }: { result: ScanResult }) {
-  const status = result.score >= 8.5 ? "AI-ready" : result.score >= 7 ? "Mostly ready" : result.score >= 5 ? "Needs fixes" : "Critical gaps";
+function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary; locale: Locale }) {
+  const status = result.score >= 8.5
+    ? copy.report.statuses.ready
+    : result.score >= 7
+      ? copy.report.statuses.mostly
+      : result.score >= 5
+        ? copy.report.statuses.needs
+        : copy.report.statuses.critical;
   const [email, setEmail] = useState("");
   const [reportStatus, setReportStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [reportMessage, setReportMessage] = useState("");
@@ -320,7 +337,7 @@ function Report({ result }: { result: ScanResult }) {
       const response = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, result }),
+        body: JSON.stringify({ email, result, locale, market: localeMarkets[locale], source: `scanner_report_${locale}` }),
       });
       const payload = await response.json();
 
@@ -329,10 +346,10 @@ function Report({ result }: { result: ScanResult }) {
       }
 
       setReportStatus("sent");
-      setReportMessage("Report sent. You are on the early access list.");
+      setReportMessage(copy.report.capture.sent);
     } catch (error) {
       setReportStatus("error");
-      setReportMessage(error instanceof Error ? error.message : "Unable to send report.");
+      setReportMessage(error instanceof Error ? error.message : copy.report.capture.fallbackError);
     }
   }
 
@@ -341,24 +358,24 @@ function Report({ result }: { result: ScanResult }) {
       <div className="report-hero">
         <Score score={result.score} />
         <div>
-          <span className="eyebrow">Scan report</span>
+          <span className="eyebrow">{copy.report.scanReport}</span>
           <h2>{status}</h2>
           <p><strong>{result.merchantSummary.headline}</strong></p>
           <p>{result.merchantSummary.body}</p>
           <p className="url-line">{result.finalUrl}</p>
         </div>
         <div className="summary-grid">
-          <Summary icon={<Store size={18} />} label="WooCommerce" value={result.platform.woocommerce ? "Confirmed" : "Unconfirmed"} />
-          <Summary icon={<CreditCard size={18} />} label="Payment" value={paymentLabel(result.paymentVisibility.level)} />
-          <Summary icon={<Globe2 size={18} />} label="JSON-LD" value={`${result.structuredData.jsonLdCount} blocks`} />
+          <Summary icon={<Store size={18} />} label={copy.report.summary.woocommerce} value={result.platform.woocommerce ? copy.report.summary.confirmed : copy.report.summary.unconfirmed} />
+          <Summary icon={<CreditCard size={18} />} label={copy.report.summary.payment} value={paymentLabel(result.paymentVisibility.level)} />
+          <Summary icon={<Globe2 size={18} />} label={copy.report.summary.jsonLd} value={`${result.structuredData.jsonLdCount} ${copy.report.summary.blocks}`} />
         </div>
       </div>
 
       <section className="report-capture" id="report-capture">
         <div>
-          <span className="eyebrow">Get the full report</span>
-          <h2>Email yourself the PDF and join early access.</h2>
-          <p>We will send the readiness report, top fixes, and plugin waitlist confirmation.</p>
+          <span className="eyebrow">{copy.report.capture.eyebrow}</span>
+          <h2>{copy.report.capture.title}</h2>
+          <p>{copy.report.capture.body}</p>
         </div>
         <div className="report-capture-form">
           <form className="report-form" onSubmit={requestReport}>
@@ -366,42 +383,39 @@ function Report({ result }: { result: ScanResult }) {
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@store.com"
-              aria-label="Email address"
+              placeholder={copy.report.capture.placeholder}
+              aria-label={copy.report.capture.label}
               type="email"
               required
             />
             <button disabled={reportStatus === "sending"}>
               {reportStatus === "sending" ? <Loader2 className="spin" size={17} /> : <ArrowRight size={17} />}
-              {reportStatus === "sending" ? "Sending" : "Send PDF"}
+              {reportStatus === "sending" ? copy.report.capture.sending : copy.report.capture.button}
             </button>
           </form>
-          <p className="email-disclaimer">
-            No spam. We will only send this report, the product launch announcement, and early-access updates.
-            You can unsubscribe anytime.
-          </p>
+          <p className="email-disclaimer">{copy.report.capture.disclaimer}</p>
           {reportMessage && <p className={`report-message ${reportStatus}`}>{reportMessage}</p>}
         </div>
       </section>
 
       <section className="card">
         <div className="card-header">
-          <h3>Product-page summary</h3>
-          <span>{result.productSummary.scanned} product pages inspected</span>
+          <h3>{copy.report.productSummary}</h3>
+          <span>{result.productSummary.scanned} {copy.report.inspected}</span>
         </div>
         <div className="product-summary-grid">
-          <RatioMetric label="Price visible" value={result.productSummary.withPrice} total={result.productSummary.scanned} />
-          <RatioMetric label="Availability visible" value={result.productSummary.withAvailability} total={result.productSummary.scanned} />
-          <RatioMetric label="Product schema" value={result.productSummary.withProductSchema} total={result.productSummary.scanned} />
-          <RatioMetric label="Offer schema" value={result.productSummary.withOfferSchema} total={result.productSummary.scanned} />
-          <RatioMetric label="Add to cart" value={result.productSummary.withAddToCart} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[0]} value={result.productSummary.withPrice} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[1]} value={result.productSummary.withAvailability} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[2]} value={result.productSummary.withProductSchema} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[3]} value={result.productSummary.withOfferSchema} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[4]} value={result.productSummary.withAddToCart} total={result.productSummary.scanned} />
         </div>
       </section>
 
       <section className="card">
         <div className="card-header">
-          <h3>Readiness layers</h3>
-          <span>What is strong vs what still blocks AI confidence</span>
+          <h3>{copy.report.readinessLayers}</h3>
+          <span>{copy.report.readinessSubtitle}</span>
         </div>
         <div className="layer-list">
           {result.readinessLayers.map((layer) => (
@@ -414,10 +428,10 @@ function Report({ result }: { result: ScanResult }) {
                 </ul>
               </div>
               <div className="layer-meta">
-                <span>Status: {layer.status}</span>
-                <span>Impact: {layer.impact}</span>
-                <span>Plugin fix: {layer.pluginCanFix}</span>
-                <span>Est. lift: {layer.estimatedLift}</span>
+                <span>{copy.report.status}: {layer.status}</span>
+                <span>{copy.report.impact}: {layer.impact}</span>
+                <span>{copy.report.pluginFix}: {layer.pluginCanFix}</span>
+                <span>{copy.report.estLift}: {layer.estimatedLift}</span>
               </div>
             </article>
           ))}
@@ -426,7 +440,7 @@ function Report({ result }: { result: ScanResult }) {
 
       <section className="card">
         <div className="card-header">
-          <h3><CreditCard size={18} /> Payment visibility</h3>
+          <h3><CreditCard size={18} /> {copy.report.paymentVisibility}</h3>
           <span className={`payment-level ${result.paymentVisibility.level}`}>{paymentLabel(result.paymentVisibility.level)}</span>
         </div>
         <p>{result.paymentVisibility.label}</p>
@@ -439,8 +453,8 @@ function Report({ result }: { result: ScanResult }) {
 
       <section className="card">
         <div className="card-header">
-          <h3><Wrench size={18} /> Fix these first</h3>
-          <span>{result.priorityFixes.length} priority fixes</span>
+          <h3><Wrench size={18} /> {copy.report.fixesTitle}</h3>
+          <span>{result.priorityFixes.length} {copy.report.priorityFixes}</span>
         </div>
         <div className="priority-list">
           {result.priorityFixes.map((fix) => (
@@ -450,9 +464,9 @@ function Report({ result }: { result: ScanResult }) {
                 <p>{fix.reason}</p>
               </div>
               <div className="priority-meta">
-                <span>Impact: {fix.impact}</span>
-                <span>Effort: {fix.effort}</span>
-                <span>Owner: {fix.owner}</span>
+                <span>{copy.report.impact}: {fix.impact}</span>
+                <span>{copy.report.effort}: {fix.effort}</span>
+                <span>{copy.report.owner}: {fix.owner}</span>
               </div>
             </article>
           ))}
@@ -460,14 +474,14 @@ function Report({ result }: { result: ScanResult }) {
       </section>
 
       <div className="two-col">
-        <Insight title="AI can understand" items={result.aiCanUnderstand} good />
-        <Insight title="AI may miss" items={result.aiMayMiss} />
+        <Insight title={copy.report.aiCan} items={result.aiCanUnderstand} good />
+        <Insight title={copy.report.aiMiss} items={result.aiMayMiss} />
       </div>
 
       <section className="card">
         <div className="card-header">
-          <h3><Eye size={18} /> How AI sees this store right now</h3>
-          <span>{result.pagesScanned.filter((page) => page.fetched).length} pages scanned</span>
+          <h3><Eye size={18} /> {copy.report.seesTitle}</h3>
+          <span>{result.pagesScanned.filter((page) => page.fetched).length} {copy.report.pagesScanned}</span>
         </div>
         <div className="visibility-grid">
           {Object.entries(result.aiVisibility).map(([key, value]) => (
@@ -481,8 +495,8 @@ function Report({ result }: { result: ScanResult }) {
 
       <section className="card">
         <div className="card-header">
-          <h3>Top issues</h3>
-          <span>{result.issues.length} found</span>
+          <h3>{copy.report.issuesTitle}</h3>
+          <span>{result.issues.length} {copy.report.found}</span>
         </div>
         <div className="issue-list">
           {result.issues.map((issue) => (
@@ -498,7 +512,7 @@ function Report({ result }: { result: ScanResult }) {
                 )}
               </div>
               <span className={`fix-chip ${issue.canPluginFix ? "auto" : "manual"}`}>
-                {issue.canPluginFix ? "Plugin can help" : "Manual"}
+                {issue.canPluginFix ? copy.report.pluginCanHelp : copy.report.manual}
               </span>
             </article>
           ))}
@@ -507,7 +521,7 @@ function Report({ result }: { result: ScanResult }) {
 
       <div className="two-col">
         <section className="card">
-          <h3>Score breakdown</h3>
+          <h3>{copy.report.scoreBreakdown}</h3>
           <div className="breakdown">
             {Object.entries(result.scoreBreakdown).map(([key, value]) => (
               <div key={key}>
@@ -519,19 +533,19 @@ function Report({ result }: { result: ScanResult }) {
           </div>
         </section>
         <section className="card">
-          <h3>Discovered pages</h3>
-          <PageSample label="Products" items={result.pageSamples.products} />
-          <PageSample label="Checkout" items={result.pageSamples.checkout} />
-          <PageSample label="Shipping" items={result.pageSamples.shipping} />
-          <PageSample label="Returns" items={result.pageSamples.returns} />
-          <PageSample label="Contact" items={result.pageSamples.contact} />
+          <h3>{copy.report.discoveredPages}</h3>
+          <PageSample label={copy.report.pageLabels[0]} items={result.pageSamples.products} copy={copy} />
+          <PageSample label={copy.report.pageLabels[1]} items={result.pageSamples.checkout} copy={copy} />
+          <PageSample label={copy.report.pageLabels[2]} items={result.pageSamples.shipping} copy={copy} />
+          <PageSample label={copy.report.pageLabels[3]} items={result.pageSamples.returns} copy={copy} />
+          <PageSample label={copy.report.pageLabels[4]} items={result.pageSamples.contact} copy={copy} />
         </section>
       </div>
 
       <section className="card">
         <div className="card-header">
-          <h3>Scanned page evidence</h3>
-          <span>Safe GET only, no form submission</span>
+          <h3>{copy.report.evidenceTitle}</h3>
+          <span>{copy.report.evidenceSubtitle}</span>
         </div>
         <div className="page-evidence-list">
           {result.pagesScanned.map((page) => (
@@ -542,18 +556,18 @@ function Report({ result }: { result: ScanResult }) {
                 {!page.fetched && <p>{page.error}</p>}
               </div>
               <div className="signal-chips">
-                <SignalChip active={page.signals.hasProductSchema} label="Product schema" />
-                <SignalChip active={page.signals.hasOfferSchema} label="Offer" />
-                <SignalChip active={page.signals.hasPrice} label="Price" />
-                <SignalChip active={page.signals.hasAvailability} label="Stock" />
-                <SignalChip active={page.signals.hasPaymentSignal} label="Payment" />
+                <SignalChip active={page.signals.hasProductSchema} label={copy.report.signals[0]} />
+                <SignalChip active={page.signals.hasOfferSchema} label={copy.report.signals[1]} />
+                <SignalChip active={page.signals.hasPrice} label={copy.report.signals[2]} />
+                <SignalChip active={page.signals.hasAvailability} label={copy.report.signals[3]} />
+                <SignalChip active={page.signals.hasPaymentSignal} label={copy.report.signals[4]} />
               </div>
             </article>
           ))}
         </div>
       </section>
 
-      <PluginValueBlock result={result} />
+      <PluginValueBlock result={result} copy={copy} />
     </section>
   );
 }
@@ -611,11 +625,11 @@ function SeverityIcon({ severity }: { severity: string }) {
   );
 }
 
-function PageSample({ label, items }: { label: string; items: string[] }) {
+function PageSample({ label, items, copy }: { label: string; items: string[]; copy: Dictionary }) {
   return (
     <div className="page-sample">
       <strong>{label}</strong>
-      {items.length === 0 ? <span>Not found</span> : items.slice(0, 3).map((item) => <a key={item} href={item} target="_blank">{new URL(item).pathname || "/"}</a>)}
+      {items.length === 0 ? <span>{copy.report.notFound}</span> : items.slice(0, 3).map((item) => <a key={item} href={item} target="_blank">{new URL(item).pathname || "/"}</a>)}
     </div>
   );
 }
@@ -624,59 +638,49 @@ function SignalChip({ active, label }: { active: boolean; label: string }) {
   return <span className={`signal-chip ${active ? "active" : ""}`}>{label}</span>;
 }
 
-function PluginValueBlock({ result }: { result: ScanResult }) {
+function PluginValueBlock({ result, copy }: { result: ScanResult; copy: Dictionary }) {
   const missingLayers = result.readinessLayers.filter((layer) => layer.status !== "strong");
   const liftText = missingLayers.length > 0
     ? missingLayers.map((layer) => `${layer.title}: ${layer.estimatedLift}`).slice(0, 3).join(" · ")
-    : "This store is already strong; the plugin keeps it monitored as products and checkout settings change.";
+    : copy.pluginValue.strongLift;
 
   return (
     <section className="plugin-value">
       <div className="plugin-value-copy">
-        <span className="eyebrow">Readystore AI plugin</span>
-        <h2>Add the AI readiness layer your store is missing.</h2>
-        <p>
-          Your product pages may already be readable, but AI shopping assistants also need trust,
-          policy, payment, freshness, and discovery signals before they can recommend a store with confidence.
-        </p>
-        <p>
-          The plugin fixes the gaps this scan found, then keeps watching the store so new products,
-          price changes, payment updates, and policy changes do not quietly break AI readiness again.
-        </p>
+        <span className="eyebrow">{copy.pluginValue.eyebrow}</span>
+        <h2>{copy.pluginValue.title}</h2>
+        <p>{copy.pluginValue.body1}</p>
+        <p>{copy.pluginValue.body2}</p>
         <div className="value-actions">
-          <button type="button" onClick={scrollToReportCapture}>Join waitlist and get PDF report <Mail size={17} /></button>
-          <span>Estimated readiness lift: {liftText}</span>
+          <button type="button" onClick={scrollToReportCapture}>{copy.pluginValue.cta} <Mail size={17} /></button>
+          <span>{copy.pluginValue.liftPrefix} {liftText}</span>
         </div>
       </div>
 
       <div className="value-grid">
         <ValueCard
           icon={<Layers3 size={20} />}
-          title="Create an AI storefront layer"
-          text="Publish llms.txt, store profile, product feed, policy links, and checkout context in a clean machine-readable format."
-          outcome="AI can find and understand the store beyond regular product pages."
+          title={copy.pluginValue.cards[0].title}
+          text={copy.pluginValue.cards[0].text}
+          outcome={copy.pluginValue.cards[0].outcome}
         />
         <ValueCard
           icon={<Wrench size={20} />}
-          title="Fix what merchants do not usually see"
-          text="Repair schema gaps, expose shipping and return metadata, summarize local payment context, and catch price/stock inconsistencies."
-          outcome="Fewer silent reasons for AI assistants to skip or mistrust the store."
+          title={copy.pluginValue.cards[1].title}
+          text={copy.pluginValue.cards[1].text}
+          outcome={copy.pluginValue.cards[1].outcome}
         />
         <ValueCard
           icon={<TrendingUp size={20} />}
-          title="Track the before and after"
-          text="Monitor score changes, fixed issues, product coverage, feed health, crawler access, and later AI-assisted traffic or checkout handoffs."
-          outcome="A clear story of what improved after the plugin was installed."
+          title={copy.pluginValue.cards[2].title}
+          text={copy.pluginValue.cards[2].text}
+          outcome={copy.pluginValue.cards[2].outcome}
         />
       </div>
 
       <div className="lost-opportunity">
         <AlertTriangle size={19} />
-        <p>
-          Without this layer, the store may still sell to humans, but AI shoppers can miss delivery terms,
-          return confidence, payment context, or fresh product data. In comparison-style shopping, unclear stores
-          are easier to leave out.
-        </p>
+        <p>{copy.pluginValue.lost}</p>
       </div>
     </section>
   );
@@ -709,7 +713,7 @@ function labelize(key: string): string {
   return key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase());
 }
 
-function SiteFooter() {
+function SiteFooter({ copy, locale }: { copy: Dictionary; locale: Locale }) {
   return (
     <footer className="site-footer">
       <div className="footer-brand">
@@ -718,17 +722,17 @@ function SiteFooter() {
         </div>
         <div>
           <strong>Readystore AI</strong>
-          <span>Built by Readystore Labs.</span>
+          <span>{copy.footer.builtBy}</span>
         </div>
       </div>
       <div className="footer-copy">
-        <p>AI readiness diagnostics for WooCommerce stores. We scan public storefront pages only.</p>
+        <p>{copy.footer.body}</p>
         <a href="mailto:hello@readystoreai.com">hello@readystoreai.com</a>
       </div>
       <div className="footer-links">
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
-        <span>&copy; 2026 Readystore Labs. All rights reserved.</span>
+        <a href={locale === defaultLocale ? "/privacy" : `/${locale}/privacy`}>{copy.footer.privacy}</a>
+        <a href={locale === defaultLocale ? "/terms" : `/${locale}/terms`}>{copy.footer.terms}</a>
+        <span>&copy; 2026 Readystore Labs. {copy.footer.rights}</span>
       </div>
     </footer>
   );

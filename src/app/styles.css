@@ -106,6 +106,30 @@ button {
   color: #172033;
 }
 
+.locale-switcher {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  border: 1px solid #ded6c7;
+  border-radius: 999px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.locale-switcher a {
+  border: 0;
+  min-width: 34px;
+  padding: 5px 7px;
+  text-align: center;
+  background: transparent;
+  font-size: 12px;
+}
+
+.locale-switcher a.active {
+  background: #172033;
+  color: #ffffff;
+}
+
 .scanner-panel,
 .card,
 .report-hero,
