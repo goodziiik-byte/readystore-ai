@@ -185,9 +185,15 @@ function MarketingSections({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-stack">
       <MarketShift copy={copy} />
+      <AIShopperSimulation copy={copy} />
       <WooGap copy={copy} />
       <ScanMethod copy={copy} />
+      <SafetyScan copy={copy} />
+      <PaymentRails copy={copy} />
+      <SampleReportPreview copy={copy} />
       <ReadinessLayer copy={copy} />
+      <BeforeAfterLayer copy={copy} />
+      <DesignPartners copy={copy} />
     </section>
   );
 }
@@ -227,6 +233,68 @@ function WooGap({ copy }: { copy: Dictionary }) {
   );
 }
 
+function AIShopperSimulation({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section ai-simulation">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.simulation.eyebrow}</span>
+        <h2>{copy.marketing.simulation.title}</h2>
+        <p>{copy.marketing.simulation.body}</p>
+      </div>
+      <div className="chat-simulation" aria-label="AI shopping assistant simulation">
+        <div className="chat-topbar">
+          <span />
+          <span />
+          <span />
+          <strong>AI shopping assistant</strong>
+        </div>
+        <div className="chat-thread">
+          <div className="chat-bubble user-bubble">
+            <span>Shopper</span>
+            <p>{copy.marketing.simulation.prompt}</p>
+          </div>
+          <div className="chat-bubble assistant-bubble">
+            <span>{copy.marketing.simulation.responseTitle}</span>
+            <div className="assistant-grid">
+              <SimulationResult
+                label={copy.marketing.simulation.beforeLabel}
+                confidence={copy.marketing.simulation.beforeConfidence}
+                items={copy.marketing.simulation.beforeItems}
+                tone="low"
+              />
+              <SimulationResult
+                label={copy.marketing.simulation.afterLabel}
+                confidence={copy.marketing.simulation.afterConfidence}
+                items={copy.marketing.simulation.afterItems}
+                tone="high"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SimulationResult({ label, confidence, items, tone }: { label: string; confidence: string; items: string[]; tone: "low" | "high" }) {
+  return (
+    <article className={`simulation-result ${tone}`}>
+      <div>
+        <strong>{label}</strong>
+        <em>{confidence}</em>
+      </div>
+      <ul>
+        {items.map((item, index) => (
+          <li key={item}>
+            {tone === "high" || index < 2 ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
+            {item}
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
 function ScanMethod({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section scan-method" id="how-it-works">
@@ -239,6 +307,93 @@ function ScanMethod({ copy }: { copy: Dictionary }) {
         {copy.marketing.diagnosis.cards.map((card) => (
           <MethodCard key={card.step} step={card.step} title={card.title} text={card.text} />
         ))}
+      </div>
+    </section>
+  );
+}
+
+function SafetyScan({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section safety-section">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.safety.eyebrow}</span>
+        <h2>{copy.marketing.safety.title}</h2>
+        <p>{copy.marketing.safety.body}</p>
+      </div>
+      <div className="safety-grid">
+        <SafetyColumn tone="scan" icon={<ShieldCheck size={20} />} title={copy.marketing.safety.scanTitle} items={copy.marketing.safety.scanItems} />
+        <SafetyColumn tone="never" icon={<LockKeyhole size={20} />} title={copy.marketing.safety.neverTitle} items={copy.marketing.safety.neverItems} />
+      </div>
+    </section>
+  );
+}
+
+function SafetyColumn({ tone, icon, title, items }: { tone: "scan" | "never"; icon: React.ReactNode; title: string; items: string[] }) {
+  return (
+    <article className={`safety-column ${tone}`}>
+      <div>
+        <span>{icon}</span>
+        <strong>{title}</strong>
+      </div>
+      <ul>
+        {items.map((item) => (
+          <li key={item}>
+            {tone === "scan" ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+            {item}
+          </li>
+        ))}
+      </ul>
+    </article>
+  );
+}
+
+function PaymentRails({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section payment-rails">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.payments.eyebrow}</span>
+        <h2>{copy.marketing.payments.title}</h2>
+        <p>{copy.marketing.payments.body}</p>
+      </div>
+      <div className="payment-badge-grid">
+        {copy.marketing.payments.badges.map((badge, index) => (
+          <div className="payment-badge" key={badge}>
+            <span>{badge.slice(0, 2).toUpperCase()}</span>
+            <strong>{badge}</strong>
+            <em>{index < 3 ? "Live market" : "Target market"}</em>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SampleReportPreview({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section sample-report-section">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.sampleReport.eyebrow}</span>
+        <h2>{copy.marketing.sampleReport.title}</h2>
+        <p>{copy.marketing.sampleReport.body}</p>
+      </div>
+      <div className="report-preview-card">
+        <div className="report-preview-top">
+          <div>
+            <span>{copy.marketing.sampleReport.cardTitle}</span>
+            <strong>Readystore AI</strong>
+          </div>
+          <em>PDF</em>
+        </div>
+        <div className="report-preview-score">
+          <span>{copy.marketing.sampleReport.scoreLabel}</span>
+          <strong>6.4/10</strong>
+          <meter min={0} max={10} value={6.4} />
+        </div>
+        <ul>
+          {copy.marketing.sampleReport.bullets.map((bullet) => (
+            <li key={bullet}><CheckCircle2 size={15} /> {bullet}</li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -262,6 +417,43 @@ function ReadinessLayer({ copy }: { copy: Dictionary }) {
       <div className="mini-feature-grid">
         {copy.marketing.layer.features.map((feature) => (
           <MiniFeature key={feature.title} title={feature.title} text={feature.text} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BeforeAfterLayer({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section before-after-section">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.beforeAfter.eyebrow}</span>
+        <h2>{copy.marketing.beforeAfter.title}</h2>
+        <p>{copy.marketing.beforeAfter.body}</p>
+      </div>
+      <div className="before-after-grid">
+        <SignalColumn title={copy.marketing.beforeAfter.beforeTitle} items={copy.marketing.beforeAfter.beforeItems} />
+        <SignalColumn highlighted title={copy.marketing.beforeAfter.afterTitle} items={copy.marketing.beforeAfter.afterItems} />
+      </div>
+    </section>
+  );
+}
+
+function DesignPartners({ copy }: { copy: Dictionary }) {
+  return (
+    <section className="marketing-section design-partners">
+      <div className="section-copy">
+        <span className="eyebrow">{copy.marketing.partners.eyebrow}</span>
+        <h2>{copy.marketing.partners.title}</h2>
+        <p>{copy.marketing.partners.body}</p>
+      </div>
+      <div className="partner-card-grid">
+        {copy.marketing.partners.cards.map((card, index) => (
+          <article className="partner-card" key={card.title}>
+            <span>0{index + 1}</span>
+            <strong>{card.title}</strong>
+            <p>{card.text}</p>
+          </article>
         ))}
       </div>
     </section>

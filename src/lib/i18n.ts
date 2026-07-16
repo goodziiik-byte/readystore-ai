@@ -99,6 +99,61 @@ const en = {
         { title: "Ongoing reports", text: "Catch readiness drift." },
       ],
     },
+    simulation: {
+      eyebrow: "AI shopper simulation",
+      title: "This is what happens before a shopper ever reaches your site.",
+      body: "AI assistants compare stores on behalf of buyers. If shipping, returns, payment context, or freshness are unclear, the assistant can lower confidence before the click.",
+      prompt: "Find a store that sells fresh coffee beans, ships to Jakarta, accepts local payment, and has clear return terms.",
+      responseTitle: "AI assistant result",
+      beforeLabel: "Without readiness layer",
+      afterLabel: "With Readystore AI",
+      beforeConfidence: "Low confidence",
+      afterConfidence: "High confidence",
+      beforeItems: ["Products found", "Price and stock readable", "Shipping unclear", "Return policy missing", "Local payment context partial"],
+      afterItems: ["Products readable", "Shipping terms exposed", "Return policy clear", "Local payments explained", "Freshness monitored"],
+    },
+    safety: {
+      eyebrow: "Safe public scan",
+      title: "What we scan and what we never touch.",
+      body: "The scanner is designed for public storefront diagnostics. It checks what AI shoppers can discover without needing private access.",
+      scanTitle: "We scan",
+      neverTitle: "We never do",
+      scanItems: ["Public product pages", "Schema and metadata", "Policy and contact pages", "Payment hints and checkout context"],
+      neverItems: ["No login", "No checkout submission", "No payment data", "No private store data"],
+    },
+    payments: {
+      eyebrow: "Local payment context",
+      title: "Built for WooCommerce stores using regional payment rails.",
+      body: "AI shoppers need to understand not only what you sell, but whether checkout is viable in their market.",
+      badges: ["Mercado Pago", "Xendit", "Midtrans", "Razorpay", "PayMongo", "VNPay", "MoMo", "Omise", "Paystack", "Flutterwave"],
+    },
+    sampleReport: {
+      eyebrow: "Sample report",
+      title: "Show merchants exactly what they get after the scan.",
+      body: "The PDF turns technical crawl findings into a merchant-readable action plan: score, missing signals, priority fixes, and plugin coverage.",
+      scoreLabel: "AI clarity score",
+      cardTitle: "PDF report preview",
+      bullets: ["Readiness score and layer breakdown", "Top fixes ranked by impact", "Product-page evidence", "Plugin coverage and estimated lift"],
+    },
+    beforeAfter: {
+      eyebrow: "Before and after",
+      title: "The plugin turns scattered storefront signals into an AI-readable layer.",
+      body: "Your store can look complete to humans while still being ambiguous to assistants. Readystore AI exposes the missing context and keeps it fresh.",
+      beforeTitle: "Before",
+      afterTitle: "After",
+      beforeItems: ["Products partially readable", "Policies hidden in text pages", "Payment context unclear", "No AI discovery manifest"],
+      afterItems: ["Products, stock, and prices exposed", "Shipping and returns linked clearly", "Local payments summarized", "llms.txt and store profile published"],
+    },
+    partners: {
+      eyebrow: "Early access",
+      title: "Looking for WooCommerce design partners.",
+      body: "We are validating with real WooCommerce merchants across LatAm, SEA, India, and Africa. Early access is open for the first 100 stores.",
+      cards: [
+        { title: "Design partners", text: "Help shape the readiness score and plugin coverage before public launch." },
+        { title: "First 100 stores", text: "Early users get priority onboarding and direct feedback loops." },
+        { title: "Global validation", text: "We are testing across local payment ecosystems, not just one market." },
+      ],
+    },
   },
   report: {
     statuses: {
@@ -227,6 +282,7 @@ const es: typeof en = {
     outcome: "Las tiendas que exponen senales claras de producto, politicas, pagos y freshness son mas faciles de comparar y recomendar para compradores IA.",
   },
   marketing: {
+    ...en.marketing,
     shift: {
       eyebrow: "Cambio de mercado",
       title: "Los compradores IA se estan convirtiendo en un nuevo canal de adquisicion.",
@@ -399,6 +455,7 @@ const id: typeof en = {
     outcome: "Toko yang punya sinyal produk, policy, pembayaran, dan freshness yang jelas lebih mudah dibandingkan dan direkomendasikan oleh AI shoppers.",
   },
   marketing: {
+    ...en.marketing,
     shift: {
       eyebrow: "Perubahan market",
       title: "AI shoppers mulai menjadi channel akuisisi baru.",
