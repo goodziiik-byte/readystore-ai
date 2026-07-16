@@ -190,7 +190,6 @@ function MarketingSections({ copy }: { copy: Dictionary }) {
       <ScanMethod copy={copy} />
       <SafetyScan copy={copy} />
       <PaymentRails copy={copy} />
-      <SampleReportPreview copy={copy} />
       <ReadinessLayer copy={copy} />
       <BeforeAfterLayer copy={copy} />
       <DesignPartners copy={copy} />
@@ -237,7 +236,6 @@ function AIShopperSimulation({ copy }: { copy: Dictionary }) {
   return (
     <section className="marketing-section ai-simulation">
       <div className="section-copy">
-        <span className="eyebrow">{copy.marketing.simulation.eyebrow}</span>
         <h2>{copy.marketing.simulation.title}</h2>
         <p>{copy.marketing.simulation.body}</p>
       </div>
@@ -250,48 +248,34 @@ function AIShopperSimulation({ copy }: { copy: Dictionary }) {
         </div>
         <div className="chat-thread">
           <div className="chat-bubble user-bubble">
-            <span>Shopper</span>
+            <span>{copy.marketing.simulation.userLabel}</span>
             <p>{copy.marketing.simulation.prompt}</p>
           </div>
-          <div className="chat-bubble assistant-bubble">
-            <span>{copy.marketing.simulation.responseTitle}</span>
-            <div className="assistant-grid">
-              <SimulationResult
-                label={copy.marketing.simulation.beforeLabel}
-                confidence={copy.marketing.simulation.beforeConfidence}
-                items={copy.marketing.simulation.beforeItems}
-                tone="low"
-              />
-              <SimulationResult
-                label={copy.marketing.simulation.afterLabel}
-                confidence={copy.marketing.simulation.afterConfidence}
-                items={copy.marketing.simulation.afterItems}
-                tone="high"
-              />
-            </div>
+          <div className="chat-bubble assistant-bubble thinking-bubble">
+            <span>{copy.marketing.simulation.assistantLabel}</span>
+            <p>{copy.marketing.simulation.thinking}</p>
+            <div className="typing-dots" aria-hidden="true"><i /><i /><i /></div>
+          </div>
+          <div className="scan-progress" aria-label="AI storefront scan progress">
+            {copy.marketing.simulation.searchSteps.map((step, index) => (
+              <div className="scan-progress-row" style={{ "--delay": `${0.8 + index * 0.22}s` } as React.CSSProperties} key={step}>
+                <Search size={14} />
+                <span>{step}</span>
+              </div>
+            ))}
+          </div>
+          <div className="chat-bubble assistant-bubble final-bubble">
+            <span>{copy.marketing.simulation.assistantLabel}</span>
+            <strong>{copy.marketing.simulation.finalTitle}</strong>
+            <ul>
+              {copy.marketing.simulation.finalItems.map((item) => (
+                <li key={item}><AlertTriangle size={15} /> {item}</li>
+              ))}
+            </ul>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-function SimulationResult({ label, confidence, items, tone }: { label: string; confidence: string; items: string[]; tone: "low" | "high" }) {
-  return (
-    <article className={`simulation-result ${tone}`}>
-      <div>
-        <strong>{label}</strong>
-        <em>{confidence}</em>
-      </div>
-      <ul>
-        {items.map((item, index) => (
-          <li key={item}>
-            {tone === "high" || index < 2 ? <CheckCircle2 size={15} /> : <AlertTriangle size={15} />}
-            {item}
-          </li>
-        ))}
-      </ul>
-    </article>
   );
 }
 
@@ -363,37 +347,6 @@ function PaymentRails({ copy }: { copy: Dictionary }) {
             <em>{index < 3 ? "Live market" : "Target market"}</em>
           </div>
         ))}
-      </div>
-    </section>
-  );
-}
-
-function SampleReportPreview({ copy }: { copy: Dictionary }) {
-  return (
-    <section className="marketing-section sample-report-section">
-      <div className="section-copy">
-        <span className="eyebrow">{copy.marketing.sampleReport.eyebrow}</span>
-        <h2>{copy.marketing.sampleReport.title}</h2>
-        <p>{copy.marketing.sampleReport.body}</p>
-      </div>
-      <div className="report-preview-card">
-        <div className="report-preview-top">
-          <div>
-            <span>{copy.marketing.sampleReport.cardTitle}</span>
-            <strong>Readystore AI</strong>
-          </div>
-          <em>PDF</em>
-        </div>
-        <div className="report-preview-score">
-          <span>{copy.marketing.sampleReport.scoreLabel}</span>
-          <strong>6.4/10</strong>
-          <meter min={0} max={10} value={6.4} />
-        </div>
-        <ul>
-          {copy.marketing.sampleReport.bullets.map((bullet) => (
-            <li key={bullet}><CheckCircle2 size={15} /> {bullet}</li>
-          ))}
-        </ul>
       </div>
     </section>
   );
