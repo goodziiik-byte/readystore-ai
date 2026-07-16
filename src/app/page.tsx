@@ -3,9 +3,21 @@
 import type { ScanResult } from "@/lib/scanner/types";
 import { defaultLocale, getDictionary, localeLabels, localeMarkets, locales, type Dictionary, type Locale } from "@/lib/i18n";
 import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, LockKeyhole, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 const examples = ["casanativa.mx", "ashaskin.in", "baliminigoods.id"];
+const paymentLogoByName: Record<string, string> = {
+  "Mercado Pago": "/payment-logos/mercado-pago.png",
+  Xendit: "/payment-logos/xendit.png",
+  Midtrans: "/payment-logos/midtrans.png",
+  Razorpay: "/payment-logos/razorpay.png",
+  PayMongo: "/payment-logos/paymongo.png",
+  VNPay: "/payment-logos/vnpay.png",
+  MoMo: "/payment-logos/momo.png",
+  Omise: "/payment-logos/omise.png",
+  Paystack: "/payment-logos/paystack.png",
+  Flutterwave: "/payment-logos/flutterwave.png",
+};
 
 export default function HomePage() {
   return <ReadystorePage locale={defaultLocale} />;
@@ -239,43 +251,53 @@ function AIShopperSimulation({ copy }: { copy: Dictionary }) {
         <h2>{copy.marketing.simulation.title}</h2>
         <p>{copy.marketing.simulation.body}</p>
       </div>
-      <div className="chat-simulation" aria-label="AI shopping assistant simulation">
-        <div className="chat-topbar">
-          <span />
-          <span />
-          <span />
-          <strong>AI shopping assistant</strong>
-        </div>
-        <div className="chat-thread">
-          <div className="chat-bubble user-bubble">
-            <span>{copy.marketing.simulation.userLabel}</span>
-            <p>{copy.marketing.simulation.prompt}</p>
-          </div>
-          <div className="chat-bubble assistant-bubble thinking-bubble">
-            <span>{copy.marketing.simulation.assistantLabel}</span>
-            <p>{copy.marketing.simulation.thinking}</p>
-            <div className="typing-dots" aria-hidden="true"><i /><i /><i /></div>
-          </div>
-          <div className="scan-progress" aria-label="AI storefront scan progress">
-            {copy.marketing.simulation.searchSteps.map((step, index) => (
-              <div className="scan-progress-row" style={{ "--delay": `${0.8 + index * 0.22}s` } as React.CSSProperties} key={step}>
-                <Search size={14} />
-                <span>{step}</span>
-              </div>
-            ))}
-          </div>
-          <div className="chat-bubble assistant-bubble final-bubble">
-            <span>{copy.marketing.simulation.assistantLabel}</span>
-            <strong>{copy.marketing.simulation.finalTitle}</strong>
-            <ul>
-              {copy.marketing.simulation.finalItems.map((item) => (
-                <li key={item}><AlertTriangle size={15} /> {item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+      <AIRequestVideo />
     </section>
+  );
+}
+
+function AIRequestVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const restartTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!video) {
+      return;
+    }
+
+    video.muted = true;
+    video.defaultPlaybackRate = 0.83;
+    video.playbackRate = 0.83;
+
+    const restart = () => {
+      if (restartTimerRef.current) {
+        window.clearTimeout(restartTimerRef.current);
+      }
+
+      restartTimerRef.current = window.setTimeout(() => {
+        video.currentTime = 0;
+        video.play().catch(() => undefined);
+      }, 2500);
+    };
+
+    video.addEventListener("ended", restart);
+    video.play().catch(() => undefined);
+
+    return () => {
+      video.removeEventListener("ended", restart);
+
+      if (restartTimerRef.current) {
+        window.clearTimeout(restartTimerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="ai-video-frame" aria-label="AI shopping request video">
+      <video ref={videoRef} src="/videos/site-animation.mp4" autoPlay muted playsInline preload="metadata" />
+    </div>
   );
 }
 
@@ -342,7 +364,9 @@ function PaymentRails({ copy }: { copy: Dictionary }) {
       <div className="payment-badge-grid">
         {copy.marketing.payments.badges.map((badge, index) => (
           <div className="payment-badge" key={badge}>
-            <span>{badge.slice(0, 2).toUpperCase()}</span>
+            <div className="payment-logo-frame">
+              <img src={paymentLogoByName[badge]} alt={`${badge} logo`} />
+            </div>
             <strong>{badge}</strong>
             <em>{index < 3 ? "Live market" : "Target market"}</em>
           </div>

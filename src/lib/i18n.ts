@@ -102,13 +102,6 @@ const en = {
     simulation: {
       title: "See the problem through a real AI shopping request.",
       body: "A buyer will not ask for schema, llms.txt, or checkout metadata. They will ask an AI assistant whether a store is trustworthy and whether it can complete the purchase.",
-      userLabel: "Shopper",
-      assistantLabel: "AI assistant",
-      prompt: "Hey, check presidential.coffee for me. Can I trust this site? Find a medium-roast Indonesian coffee, tell me the price, confirm shipping and refunds, and prepare a payment link if it looks safe.",
-      thinking: "I will inspect the public storefront and checkout signals first.",
-      searchSteps: ["Opening presidential.coffee", "Checking product pages", "Looking for price and stock", "Checking shipping and refund policy", "Checking payment provider signals"],
-      finalTitle: "I found coffee products, but I cannot recommend checkout with high confidence.",
-      finalItems: ["Product pages are visible, but price and stock are not consistently machine-readable.", "Shipping and refund policy are hard to confirm from public pages.", "I cannot clearly identify the payment provider or generate a safe payment link.", "Recommendation confidence: low until the store exposes clearer product, policy, payment, and checkout signals."],
     },
     safety: {
       eyebrow: "Safe public scan",
@@ -241,6 +234,10 @@ const en = {
 
 const es: typeof en = {
   ...en,
+  meta: {
+    title: "Readystore AI",
+    description: "Escanea si ChatGPT, Google AI y agentes de compra pueden entender tu tienda WooCommerce.",
+  },
   nav: { howItWorks: "Como funciona", plugin: "Plugin", contact: "Contacto" },
   hero: {
     ...en.hero,
@@ -359,6 +356,10 @@ const es: typeof en = {
 
 const pt: typeof en = {
   ...en,
+  meta: {
+    title: "Readystore AI",
+    description: "Escaneie se ChatGPT, Google AI e agentes de compra conseguem entender sua loja WooCommerce.",
+  },
   nav: { howItWorks: "Como funciona", plugin: "Plugin", contact: "Contato" },
   hero: {
     ...en.hero,
@@ -414,6 +415,10 @@ const pt: typeof en = {
 
 const id: typeof en = {
   ...en,
+  meta: {
+    title: "Readystore AI",
+    description: "Scan apakah ChatGPT, Google AI, dan shopping agents bisa memahami toko WooCommerce Anda.",
+  },
   nav: { howItWorks: "Cara kerja", plugin: "Plugin", contact: "Kontak" },
   hero: {
     ...en.hero,
