@@ -2,6 +2,7 @@
 
 import type { ScanResult } from "@/lib/scanner/types";
 import { defaultLocale, getDictionary, localeLabels, localeMarkets, locales, type Dictionary, type Locale } from "@/lib/i18n";
+import { aiVisibilityLabel, displayEffort, displayImpact, displayOwner, displayPaymentLevel, displayPluginFix, displayStatus, localizeScanResult, pageRoleLabel, scoreBreakdownLabel } from "@/lib/report-localization";
 import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, LockKeyhole, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -40,7 +41,7 @@ export function ReadystorePage({ locale }: { locale: Locale }) {
       const response = await fetch("/api/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, locale }),
       });
       const payload = await response.json();
 
@@ -486,11 +487,12 @@ function MiniFeature({ title, text }: { title: string; text: string }) {
 }
 
 function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary; locale: Locale }) {
-  const status = result.score >= 8.5
+  const report = localizeScanResult(result, locale);
+  const status = report.score >= 8.5
     ? copy.report.statuses.ready
-    : result.score >= 7
+    : report.score >= 7
       ? copy.report.statuses.mostly
-      : result.score >= 5
+      : report.score >= 5
         ? copy.report.statuses.needs
         : copy.report.statuses.critical;
   const [email, setEmail] = useState("");
@@ -525,18 +527,18 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
   return (
     <section className="report-stack">
       <div className="report-hero">
-        <Score score={result.score} />
+        <Score score={report.score} />
         <div>
           <span className="eyebrow">{copy.report.scanReport}</span>
           <h2>{status}</h2>
-          <p><strong>{result.merchantSummary.headline}</strong></p>
-          <p>{result.merchantSummary.body}</p>
-          <p className="url-line">{result.finalUrl}</p>
+          <p><strong>{report.merchantSummary.headline}</strong></p>
+          <p>{report.merchantSummary.body}</p>
+          <p className="url-line">{report.finalUrl}</p>
         </div>
         <div className="summary-grid">
-          <Summary icon={<Store size={18} />} label={copy.report.summary.woocommerce} value={result.platform.woocommerce ? copy.report.summary.confirmed : copy.report.summary.unconfirmed} />
-          <Summary icon={<CreditCard size={18} />} label={copy.report.summary.payment} value={paymentLabel(result.paymentVisibility.level)} />
-          <Summary icon={<Globe2 size={18} />} label={copy.report.summary.jsonLd} value={`${result.structuredData.jsonLdCount} ${copy.report.summary.blocks}`} />
+          <Summary icon={<Store size={18} />} label={copy.report.summary.woocommerce} value={report.platform.woocommerce ? copy.report.summary.confirmed : copy.report.summary.unconfirmed} />
+          <Summary icon={<CreditCard size={18} />} label={copy.report.summary.payment} value={displayPaymentLevel(report.paymentVisibility.level, locale)} />
+          <Summary icon={<Globe2 size={18} />} label={copy.report.summary.jsonLd} value={`${report.structuredData.jsonLdCount} ${copy.report.summary.blocks}`} />
         </div>
       </div>
 
@@ -570,14 +572,14 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
       <section className="card">
         <div className="card-header">
           <h3>{copy.report.productSummary}</h3>
-          <span>{result.productSummary.scanned} {copy.report.inspected}</span>
+          <span>{report.productSummary.scanned} {copy.report.inspected}</span>
         </div>
         <div className="product-summary-grid">
-          <RatioMetric label={copy.report.ratios[0]} value={result.productSummary.withPrice} total={result.productSummary.scanned} />
-          <RatioMetric label={copy.report.ratios[1]} value={result.productSummary.withAvailability} total={result.productSummary.scanned} />
-          <RatioMetric label={copy.report.ratios[2]} value={result.productSummary.withProductSchema} total={result.productSummary.scanned} />
-          <RatioMetric label={copy.report.ratios[3]} value={result.productSummary.withOfferSchema} total={result.productSummary.scanned} />
-          <RatioMetric label={copy.report.ratios[4]} value={result.productSummary.withAddToCart} total={result.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[0]} value={report.productSummary.withPrice} total={report.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[1]} value={report.productSummary.withAvailability} total={report.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[2]} value={report.productSummary.withProductSchema} total={report.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[3]} value={report.productSummary.withOfferSchema} total={report.productSummary.scanned} />
+          <RatioMetric label={copy.report.ratios[4]} value={report.productSummary.withAddToCart} total={report.productSummary.scanned} />
         </div>
       </section>
 
@@ -587,7 +589,7 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
           <span>{copy.report.readinessSubtitle}</span>
         </div>
         <div className="layer-list">
-          {result.readinessLayers.map((layer) => (
+          {report.readinessLayers.map((layer) => (
             <article className={`layer-row ${layer.status}`} key={layer.id}>
               <div>
                 <strong>{layer.title}</strong>
@@ -597,9 +599,9 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
                 </ul>
               </div>
               <div className="layer-meta">
-                <span>{copy.report.status}: {layer.status}</span>
-                <span>{copy.report.impact}: {layer.impact}</span>
-                <span>{copy.report.pluginFix}: {layer.pluginCanFix}</span>
+                <span>{copy.report.status}: {displayStatus(layer.status, locale)}</span>
+                <span>{copy.report.impact}: {displayImpact(layer.impact, locale)}</span>
+                <span>{copy.report.pluginFix}: {displayPluginFix(layer.pluginCanFix, locale)}</span>
                 <span>{copy.report.estLift}: {layer.estimatedLift}</span>
               </div>
             </article>
@@ -610,12 +612,12 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
       <section className="card">
         <div className="card-header">
           <h3><CreditCard size={18} /> {copy.report.paymentVisibility}</h3>
-          <span className={`payment-level ${result.paymentVisibility.level}`}>{paymentLabel(result.paymentVisibility.level)}</span>
+          <span className={`payment-level ${report.paymentVisibility.level}`}>{displayPaymentLevel(report.paymentVisibility.level, locale)}</span>
         </div>
-        <p>{result.paymentVisibility.label}</p>
-        {result.paymentVisibility.evidence.length > 0 && (
+        <p>{report.paymentVisibility.label}</p>
+        {report.paymentVisibility.evidence.length > 0 && (
           <ul className="evidence-list">
-            {result.paymentVisibility.evidence.map((item) => <li key={item}>{item}</li>)}
+            {report.paymentVisibility.evidence.map((item) => <li key={item}>{item}</li>)}
           </ul>
         )}
       </section>
@@ -623,19 +625,19 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
       <section className="card">
         <div className="card-header">
           <h3><Wrench size={18} /> {copy.report.fixesTitle}</h3>
-          <span>{result.priorityFixes.length} {copy.report.priorityFixes}</span>
+          <span>{report.priorityFixes.length} {copy.report.priorityFixes}</span>
         </div>
         <div className="priority-list">
-          {result.priorityFixes.map((fix) => (
+          {report.priorityFixes.map((fix) => (
             <article className="priority-row" key={fix.title}>
               <div>
                 <strong>{fix.title}</strong>
                 <p>{fix.reason}</p>
               </div>
               <div className="priority-meta">
-                <span>{copy.report.impact}: {fix.impact}</span>
-                <span>{copy.report.effort}: {fix.effort}</span>
-                <span>{copy.report.owner}: {fix.owner}</span>
+                <span>{copy.report.impact}: {displayImpact(fix.impact, locale)}</span>
+                <span>{copy.report.effort}: {displayEffort(fix.effort, locale)}</span>
+                <span>{copy.report.owner}: {displayOwner(fix.owner, locale)}</span>
               </div>
             </article>
           ))}
@@ -643,20 +645,20 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
       </section>
 
       <div className="two-col">
-        <Insight title={copy.report.aiCan} items={result.aiCanUnderstand} good />
-        <Insight title={copy.report.aiMiss} items={result.aiMayMiss} />
+        <Insight title={copy.report.aiCan} items={report.aiCanUnderstand} good />
+        <Insight title={copy.report.aiMiss} items={report.aiMayMiss} />
       </div>
 
       <section className="card">
         <div className="card-header">
           <h3><Eye size={18} /> {copy.report.seesTitle}</h3>
-          <span>{result.pagesScanned.filter((page) => page.fetched).length} {copy.report.pagesScanned}</span>
+          <span>{report.pagesScanned.filter((page) => page.fetched).length} {copy.report.pagesScanned}</span>
         </div>
         <div className="visibility-grid">
-          {Object.entries(result.aiVisibility).map(([key, value]) => (
+          {Object.entries(report.aiVisibility).map(([key, value]) => (
             <div className={`visibility ${value}`} key={key}>
-              <span>{labelize(key)}</span>
-              <strong>{value}</strong>
+              <span>{aiVisibilityLabel(key, locale)}</span>
+              <strong>{displayStatus(value, locale)}</strong>
             </div>
           ))}
         </div>
@@ -665,10 +667,10 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
       <section className="card">
         <div className="card-header">
           <h3>{copy.report.issuesTitle}</h3>
-          <span>{result.issues.length} {copy.report.found}</span>
+          <span>{report.issues.length} {copy.report.found}</span>
         </div>
         <div className="issue-list">
-          {result.issues.map((issue) => (
+          {report.issues.map((issue) => (
             <article className="issue-row" key={issue.id}>
               <SeverityIcon severity={issue.severity} />
               <div>
@@ -692,9 +694,9 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
         <section className="card">
           <h3>{copy.report.scoreBreakdown}</h3>
           <div className="breakdown">
-            {Object.entries(result.scoreBreakdown).map(([key, value]) => (
+            {Object.entries(report.scoreBreakdown).map(([key, value]) => (
               <div key={key}>
-                <span>{labelize(key)}</span>
+                <span>{scoreBreakdownLabel(key, locale)}</span>
                 <meter min={0} max={10} value={value} />
                 <strong>{value}/10</strong>
               </div>
@@ -703,11 +705,11 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
         </section>
         <section className="card">
           <h3>{copy.report.discoveredPages}</h3>
-          <PageSample label={copy.report.pageLabels[0]} items={result.pageSamples.products} copy={copy} />
-          <PageSample label={copy.report.pageLabels[1]} items={result.pageSamples.checkout} copy={copy} />
-          <PageSample label={copy.report.pageLabels[2]} items={result.pageSamples.shipping} copy={copy} />
-          <PageSample label={copy.report.pageLabels[3]} items={result.pageSamples.returns} copy={copy} />
-          <PageSample label={copy.report.pageLabels[4]} items={result.pageSamples.contact} copy={copy} />
+          <PageSample label={copy.report.pageLabels[0]} items={report.pageSamples.products} copy={copy} />
+          <PageSample label={copy.report.pageLabels[1]} items={report.pageSamples.checkout} copy={copy} />
+          <PageSample label={copy.report.pageLabels[2]} items={report.pageSamples.shipping} copy={copy} />
+          <PageSample label={copy.report.pageLabels[3]} items={report.pageSamples.returns} copy={copy} />
+          <PageSample label={copy.report.pageLabels[4]} items={report.pageSamples.contact} copy={copy} />
         </section>
       </div>
 
@@ -717,10 +719,10 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
           <span>{copy.report.evidenceSubtitle}</span>
         </div>
         <div className="page-evidence-list">
-          {result.pagesScanned.map((page) => (
+          {report.pagesScanned.map((page) => (
             <article className="page-evidence" key={`${page.role}-${page.url}`}>
               <div>
-                <strong>{page.role}</strong>
+                <strong>{pageRoleLabel(page.role, locale)}</strong>
                 <a href={page.url} target="_blank">{page.url}</a>
                 {!page.fetched && <p>{page.error}</p>}
               </div>
@@ -736,7 +738,7 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
         </div>
       </section>
 
-      <PluginValueBlock result={result} copy={copy} />
+      <PluginValueBlock result={report} copy={copy} />
     </section>
   );
 }

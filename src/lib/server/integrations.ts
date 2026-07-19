@@ -1,4 +1,6 @@
 import type { ScanResult } from "@/lib/scanner/types";
+import { defaultLocale, isLocale, type Locale } from "@/lib/i18n";
+import { getReportLocaleCopy, localizeScanResult } from "@/lib/report-localization";
 import { buildReportPdf } from "@/lib/server/report-pdf";
 
 type LeadInput = {
@@ -30,7 +32,7 @@ export function integrationsConfigured() {
   };
 }
 
-export async function persistScan(result: ScanResult) {
+export async function persistScan(result: ScanResult, locale: Locale = defaultLocale) {
   if (!supabaseUrl || !supabaseServiceKey) {
     return;
   }
@@ -47,7 +49,7 @@ export async function persistScan(result: ScanResult) {
       payment_label: result.paymentVisibility.label,
       result,
       source: "scanner",
-      locale: "en",
+      locale,
     },
     prefer: "resolution=merge-duplicates",
     onConflict: "id",
@@ -136,18 +138,20 @@ export async function markReportFailed(reportRequestId: string, error: string) {
   });
 }
 
-export async function sendReportEmail(email: string, domain: string, result: ScanResult) {
+export async function sendReportEmail(email: string, domain: string, result: ScanResult, locale: Locale = defaultLocale) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.REPORT_FROM_EMAIL ?? "Readystore AI <reports@readystoreai.com>";
   const replyTo = process.env.REPORT_REPLY_TO;
   const unsubscribeEmail = replyTo ?? "reports@readystoreai.com";
   const unsubscribeUrl = `mailto:${unsubscribeEmail}?subject=Unsubscribe%20Readystore%20AI`;
+  const safeLocale = isLocale(locale) ? locale : defaultLocale;
+  const copy = getReportLocaleCopy(safeLocale);
 
   if (!apiKey) {
     throw new Error("Resend is not configured.");
   }
 
-  const pdf = await buildReportPdf(result);
+  const pdf = await buildReportPdf(result, safeLocale);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -158,11 +162,11 @@ export async function sendReportEmail(email: string, domain: string, result: Sca
       from,
       to: [email],
       reply_to: replyTo,
-      subject: `AI Readiness Report for ${domain}`,
+      subject: copy.email.subject(domain),
       headers: {
         "List-Unsubscribe": `<${unsubscribeUrl}>`,
       },
-      html: buildEmailHtml(domain, result, unsubscribeUrl),
+      html: buildEmailHtml(domain, result, unsubscribeUrl, safeLocale),
       attachments: [
         {
           filename: `readystore-ai-report-${domain}.pdf`,
@@ -228,24 +232,26 @@ async function supabaseGet<T = unknown>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function buildEmailHtml(domain: string, result: ScanResult, unsubscribeUrl: string) {
-  const fixes = result.priorityFixes.slice(0, 3).map((fix) => `<li><strong>${escapeHtml(fix.title)}</strong> — ${escapeHtml(fix.reason)}</li>`).join("");
+function buildEmailHtml(domain: string, result: ScanResult, unsubscribeUrl: string, locale: Locale) {
+  const localizedResult = localizeScanResult(result, locale);
+  const copy = getReportLocaleCopy(locale);
+  const fixes = localizedResult.priorityFixes.slice(0, 3).map((fix) => `<li><strong>${escapeHtml(fix.title)}</strong> - ${escapeHtml(fix.reason)}</li>`).join("");
 
   return `
     <div style="font-family:Arial,sans-serif;color:#172033;line-height:1.5">
-      <h1 style="margin:0 0 12px">Your AI Readiness Report</h1>
-      <p style="margin:0 0 16px">Readystore AI scanned <strong>${escapeHtml(domain)}</strong>.</p>
+      <h1 style="margin:0 0 12px">${escapeHtml(copy.email.title)}</h1>
+      <p style="margin:0 0 16px">${escapeHtml(copy.email.scanned)} <strong>${escapeHtml(domain)}</strong>.</p>
       <div style="padding:16px;border:1px solid #ded6c7;border-radius:8px;margin:16px 0">
-        <p style="margin:0;color:#64748b">AI clarity score</p>
-        <p style="font-size:42px;font-weight:700;margin:4px 0">${result.score.toFixed(1)}/10</p>
-        <p style="margin:0">${escapeHtml(result.merchantSummary.headline)}</p>
+        <p style="margin:0;color:#64748b">${escapeHtml(copy.email.scoreLabel)}</p>
+        <p style="font-size:42px;font-weight:700;margin:4px 0">${localizedResult.score.toFixed(1)}/10</p>
+        <p style="margin:0">${escapeHtml(localizedResult.merchantSummary.headline)}</p>
       </div>
-      <h2 style="font-size:18px">Top fixes</h2>
+      <h2 style="font-size:18px">${escapeHtml(copy.email.topFixes)}</h2>
       <ul>${fixes}</ul>
-      <p>The PDF report is attached. You are now on the Readystore AI early access list.</p>
+      <p>${escapeHtml(copy.email.attached)}</p>
       <p style="margin-top:24px;color:#64748b;font-size:12px">
-        No spam. We will only send the product launch announcement and early-access updates.
-        <a href="${unsubscribeUrl}" style="color:#0c6b61">Unsubscribe</a>.
+        ${escapeHtml(copy.email.noSpam)}
+        <a href="${unsubscribeUrl}" style="color:#0c6b61">${escapeHtml(copy.email.unsubscribe)}</a>.
       </p>
     </div>
   `;

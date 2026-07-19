@@ -1,4 +1,6 @@
 import type { ScanResult } from "@/lib/scanner/types";
+import { defaultLocale, type Locale } from "@/lib/i18n";
+import { displayImpact, displayPaymentLevel, displayStatus, getReportLocaleCopy, localizeScanResult } from "@/lib/report-localization";
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from "@react-pdf/renderer";
 
 const colors = {
@@ -14,54 +16,54 @@ const colors = {
   green: "#166534",
 };
 
-export async function buildReportPdf(result: ScanResult) {
-  return renderToBuffer(<ReportDocument result={result} />);
+export async function buildReportPdf(result: ScanResult, locale: Locale = defaultLocale) {
+  return renderToBuffer(<ReportDocument result={localizeScanResult(result, locale)} locale={locale} />);
 }
 
-function ReportDocument({ result }: { result: ScanResult }) {
+function ReportDocument({ result, locale }: { result: ScanResult; locale: Locale }) {
+  const copy = getReportLocaleCopy(locale).pdf;
   const domain = domainFromUrl(result.finalUrl || result.requestedUrl);
-  const payment = result.paymentVisibility.level === "confirmed_provider" ? "Confirmed" : result.paymentVisibility.level === "generic_payment_visible" ? "Partial" : "Missing";
 
   return (
-    <Document title={`Readystore AI Report - ${domain}`} author="Readystore AI">
+    <Document title={`${copy.title} - ${domain}`} author="Readystore AI">
       <Page size="A4" style={styles.page}>
         <Header domain={domain} />
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
-            <Text style={styles.kicker}>AI readiness report</Text>
-            <Text style={styles.title}>AI readiness score for this store.</Text>
+            <Text style={styles.kicker}>{copy.kicker}</Text>
+            <Text style={styles.title}>{copy.scoreTitle}</Text>
             <Text style={styles.body}>{result.merchantSummary.body}</Text>
           </View>
           <View style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>AI clarity score</Text>
+            <Text style={styles.scoreLabel}>{copy.scoreLabel}</Text>
             <Text style={styles.score}>{result.score.toFixed(1)}</Text>
             <Text style={styles.scoreOutOf}>/10</Text>
           </View>
         </View>
 
         <View style={styles.metricGrid}>
-          <Metric label="WooCommerce" value={result.platform.woocommerce ? "Confirmed" : "Unconfirmed"} />
-          <Metric label="Payment" value={payment} />
-          <Metric label="Product pages" value={`${result.productSummary.scanned}`} />
-          <Metric label="JSON-LD blocks" value={`${result.structuredData.jsonLdCount}`} />
+          <Metric label={copy.woocommerce} value={result.platform.woocommerce ? copy.confirmed : copy.unconfirmed} />
+          <Metric label={copy.payment} value={displayPaymentLevel(result.paymentVisibility.level, locale)} />
+          <Metric label={copy.productPages} value={`${result.productSummary.scanned}`} />
+          <Metric label={copy.jsonLdBlocks} value={`${result.structuredData.jsonLdCount}`} />
         </View>
 
-        <Section title="Readiness layers">
+        <Section title={copy.readinessLayers}>
           <View style={styles.layerGrid}>
             {result.readinessLayers.map((layer) => (
               <View style={styles.layerCard} key={layer.id}>
                 <View style={styles.layerTop}>
                   <Text style={styles.layerTitle}>{layer.title}</Text>
-                  <Text style={[styles.statusPill, statusStyle(layer.status)]}>{layer.status}</Text>
+                  <Text style={[styles.statusPill, statusStyle(layer.status)]}>{displayStatus(layer.status, locale)}</Text>
                 </View>
                 <Text style={styles.smallBody}>{layer.whyItMatters}</Text>
-                <Text style={styles.lift}>Est. lift: {layer.estimatedLift}</Text>
+                <Text style={styles.lift}>{copy.estLift}: {layer.estimatedLift}</Text>
               </View>
             ))}
           </View>
         </Section>
 
-        <Section title="Fix these first">
+        <Section title={copy.fixFirst}>
           <View style={styles.fixList}>
             {result.priorityFixes.slice(0, 5).map((fix, index) => (
               <View style={styles.fixRow} key={`${fix.title}-${index}`}>
@@ -70,52 +72,50 @@ function ReportDocument({ result }: { result: ScanResult }) {
                   <Text style={styles.fixTitle}>{fix.title}</Text>
                   <Text style={styles.smallBody}>{fix.reason}</Text>
                 </View>
-                <Text style={[styles.impactPill, impactStyle(fix.impact)]}>{fix.impact}</Text>
+                <Text style={[styles.impactPill, impactStyle(fix.impact)]}>{displayImpact(fix.impact, locale)}</Text>
               </View>
             ))}
           </View>
         </Section>
 
-        <Footer page={1} />
+        <Footer page={1} locale={locale} />
       </Page>
 
       <Page size="A4" style={styles.page}>
         <Header domain={domain} compact />
 
-        <Section title="Product-page summary">
+        <Section title={copy.productSummary}>
           <View style={styles.productGrid}>
-            <Ratio label="Price visible" value={result.productSummary.withPrice} total={result.productSummary.scanned} />
-            <Ratio label="Availability" value={result.productSummary.withAvailability} total={result.productSummary.scanned} />
-            <Ratio label="Product schema" value={result.productSummary.withProductSchema} total={result.productSummary.scanned} />
-            <Ratio label="Offer schema" value={result.productSummary.withOfferSchema} total={result.productSummary.scanned} />
-            <Ratio label="Add to cart" value={result.productSummary.withAddToCart} total={result.productSummary.scanned} />
+            <Ratio label={copy.ratios[0]} value={result.productSummary.withPrice} total={result.productSummary.scanned} />
+            <Ratio label={copy.ratios[1]} value={result.productSummary.withAvailability} total={result.productSummary.scanned} />
+            <Ratio label={copy.ratios[2]} value={result.productSummary.withProductSchema} total={result.productSummary.scanned} />
+            <Ratio label={copy.ratios[3]} value={result.productSummary.withOfferSchema} total={result.productSummary.scanned} />
+            <Ratio label={copy.ratios[4]} value={result.productSummary.withAddToCart} total={result.productSummary.scanned} />
           </View>
         </Section>
 
         <View style={styles.twoColumns}>
-          <Section title="AI can understand" compact>
+          <Section title={copy.aiCan} compact>
             <BulletList items={result.aiCanUnderstand.slice(0, 6)} positive />
           </Section>
-          <Section title="AI may miss" compact>
+          <Section title={copy.aiMiss} compact>
             <BulletList items={result.aiMayMiss.slice(0, 6)} />
           </Section>
         </View>
 
-        <Section title="How Readystore AI can help">
+        <Section title={copy.howHelp}>
           <View style={styles.valueBox}>
-            <Text style={styles.valueTitle}>Add the missing AI readiness layer.</Text>
+            <Text style={styles.valueTitle}>{copy.valueTitle}</Text>
             <Text style={styles.body}>
-              The plugin publishes AI discovery files, clean product and policy context, local payment signals, and ongoing monitoring so readiness does not drift as the store changes.
+              {copy.valueBody}
             </Text>
             <View style={styles.valueGrid}>
-              <MiniValue title="AI discovery" text="llms.txt, store profile, clean entry points." />
-              <MiniValue title="Trust context" text="Shipping, returns, contact and policy metadata." />
-              <MiniValue title="Monitoring" text="Weekly score, fixed issues and drift alerts." />
+              {copy.valueCards.map((card) => <MiniValue key={card.title} title={card.title} text={card.text} />)}
             </View>
           </View>
         </Section>
 
-        <Footer page={2} />
+        <Footer page={2} locale={locale} />
       </Page>
     </Document>
   );
@@ -190,11 +190,13 @@ function MiniValue({ title, text }: { title: string; text: string }) {
   );
 }
 
-function Footer({ page }: { page: number }) {
+function Footer({ page, locale }: { page: number; locale: Locale }) {
+  const copy = getReportLocaleCopy(locale).pdf;
+
   return (
     <View style={styles.footer} fixed>
       <Text>readystoreai.com</Text>
-      <Text>Page {page}</Text>
+      <Text>{copy.footerPage} {page}</Text>
     </View>
   );
 }

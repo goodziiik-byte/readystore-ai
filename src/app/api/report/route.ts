@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const { domain, lead, reportRequest } = await createLeadAndReportRequest({ email, result, locale, market, source });
 
     try {
-      await sendReportEmail(email, domain, result);
+      await sendReportEmail(email, domain, result, locale);
       await Promise.all([
         markReportSent(reportRequest.id),
         markLeadReportSent(lead.id),
