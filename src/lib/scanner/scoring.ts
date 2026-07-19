@@ -10,7 +10,7 @@ export function buildScore(input: ScoreInput): Pick<ScanResult, "score" | "score
     priceAndCurrency: scorePair(input.signals.hasPrice, input.signals.hasCurrency),
     stockAvailability: input.signals.hasAvailability ? 8 : 2,
     shippingReturns: Math.min(10, (input.pageSamples.shipping.length > 0 ? 4 : 0) + (input.pageSamples.returns.length > 0 ? 4 : 0) + (input.pageSamples.contact.length > 0 ? 2 : 0)),
-    paymentCheckout: Math.min(10, (input.paymentProviders.length > 0 ? 5 : 0) + (input.pageSamples.checkout.length > 0 ? 3 : 0) + (input.pageSamples.cart.length > 0 ? 2 : 0)),
+    paymentCheckout: scoreCheckoutPath(input),
     aiSurfaces: input.signals.hasLlmsTxt ? 9 : input.signals.hasSitemapHint ? 4 : 1,
     crawlability: input.signals.hasRobotsTxt ? 8 : 5,
   };
@@ -49,6 +49,38 @@ function scorePair(first: boolean, second: boolean): number {
   }
 
   return 1;
+}
+
+function scoreCheckoutPath(input: ScoreInput): number {
+  const statusScore = {
+    ready: 10,
+    partial: 6,
+    requires_plugin: 4,
+    blocked: 0,
+  };
+
+  const checks = input.checkoutReadiness.checks;
+  const scoreFor = (id: string): number => {
+    const check = checks.find((item) => item.id === id);
+    return check ? statusScore[check.status] : 0;
+  };
+
+  const weighted =
+    scoreFor("product_selectable") * 0.16 +
+    scoreFor("cart_reachable") * 0.14 +
+    scoreFor("checkout_reachable") * 0.18 +
+    scoreFor("payment_context") * 0.2 +
+    scoreFor("trust_policies") * 0.12 +
+    scoreFor("safe_payment_link") * 0.2;
+
+  const publicScanCap =
+    input.checkoutReadiness.status === "ready_to_guide"
+      ? 8
+      : input.checkoutReadiness.status === "partially_ready"
+        ? 7
+        : 5;
+
+  return Math.round(Math.min(publicScanCap, weighted) * 10) / 10;
 }
 
 function buildIssues(input: ScoreInput): ScanIssue[] {
@@ -123,6 +155,34 @@ function buildIssues(input: ScoreInput): ScanIssue[] {
     });
   }
 
+  if (input.checkoutReadiness.status === "blocked_or_unclear") {
+    issues.push({
+      id: "checkout-path-blocked",
+      category: "Checkout",
+      severity: "high",
+      title: "AI checkout path is blocked or unclear",
+      explanation: "AI assistants may be able to read products, but still fail to guide a buyer from product selection to checkout and payment.",
+      evidence: input.checkoutReadiness.checks
+        .filter((check) => check.status === "blocked")
+        .flatMap((check) => check.evidence.length > 0 ? check.evidence : [check.explanation])
+        .slice(0, 5),
+      canPluginFix: true,
+    });
+  } else if (input.checkoutReadiness.status === "partially_ready") {
+    issues.push({
+      id: "checkout-handoff-needs-plugin",
+      category: "Checkout",
+      severity: "medium",
+      title: "Safe AI checkout handoff is not confirmed",
+      explanation: "The public store has some buying-path signals, but generating a safe checkout or payment link requires a merchant-approved plugin connection.",
+      evidence: input.checkoutReadiness.checks
+        .filter((check) => check.status === "partial" || check.status === "requires_plugin")
+        .flatMap((check) => check.evidence.length > 0 ? check.evidence : [check.explanation])
+        .slice(0, 5),
+      canPluginFix: true,
+    });
+  }
+
   if (! input.signals.hasLlmsTxt) {
     issues.push({
       id: "llms-txt-missing",
@@ -161,6 +221,8 @@ function buildMayMiss(input: ScoreInput): string[] {
   if (input.aiVisibility.shipping === "missing") items.push("Shipping information may be hard to discover.");
   if (input.aiVisibility.returns === "missing") items.push("Return policy may be hard to discover.");
   if (input.paymentProviders.length === 0) items.push("Payment provider context may be invisible to AI.");
+  if (input.checkoutReadiness.status === "blocked_or_unclear") items.push("The buying path from product to checkout may be blocked or unclear.");
+  if (input.checkoutReadiness.status === "partially_ready") items.push("Safe AI checkout handoff requires a plugin connection.");
   if (! input.signals.hasLlmsTxt) items.push("No llms.txt AI discovery manifest was found.");
 
   return items.length > 0 ? items : ["No major AI-readiness gaps were detected in this first scan."];

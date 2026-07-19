@@ -45,6 +45,9 @@ export type PageObservation = {
     hasOfferSchema: boolean;
     hasPaymentSignal: boolean;
     hasContactSignal: boolean;
+    hasCheckoutForm: boolean;
+    hasCheckoutSecuritySignal: boolean;
+    hasBotProtectionSignal: boolean;
   };
   schemaTypes: string[];
   paymentProviders: DetectedProvider[];
@@ -74,6 +77,27 @@ export type PaymentVisibility = {
   level: "confirmed_provider" | "generic_payment_visible" | "not_visible";
   label: string;
   evidence: string[];
+};
+
+export type CheckoutReadinessCheck = {
+  id:
+    | "product_selectable"
+    | "cart_reachable"
+    | "checkout_reachable"
+    | "payment_context"
+    | "trust_policies"
+    | "safe_payment_link";
+  label: string;
+  status: "ready" | "partial" | "blocked" | "requires_plugin";
+  explanation: string;
+  evidence: string[];
+};
+
+export type CheckoutReadiness = {
+  status: "ready_to_guide" | "partially_ready" | "blocked_or_unclear";
+  label: string;
+  summary: string;
+  checks: CheckoutReadinessCheck[];
 };
 
 export type PriorityFix = {
@@ -145,6 +169,7 @@ export type ScanResult = {
   aiVisibility: AiVisibilitySnapshot;
   productSummary: ProductSummary;
   paymentVisibility: PaymentVisibility;
+  checkoutReadiness: CheckoutReadiness;
   priorityFixes: PriorityFix[];
   merchantSummary: MerchantSummary;
   readinessLayers: ReadinessLayer[];

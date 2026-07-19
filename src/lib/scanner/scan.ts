@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import { detectPageSamples, detectPaymentProviders } from "./detectors";
 import { buildScore } from "./scoring";
-import type { DetectedProvider, PageObservation, PageRole, PaymentVisibility, PriorityFix, ProductSummary, ReadinessLayer, ScanResult } from "./types";
+import type { CheckoutReadiness, DetectedProvider, PageObservation, PageRole, PaymentVisibility, PriorityFix, ProductSummary, ReadinessLayer, ScanResult } from "./types";
 import { normalizeUrl, sameOrigin } from "./url";
 
 const USER_AGENT = "AIReadinessScanner/0.1 (+https://example.com)";
@@ -14,7 +14,7 @@ export async function scanStore(inputUrl: string): Promise<ScanResult> {
   const $ = cheerio.load(homepage.text);
   const homepageObservation = observePage(homepage.finalUrl, "homepage", homepage.text, 200);
   const internalLinks = extractInternalLinks($, new URL(homepage.finalUrl));
-  const pageSamples = detectPageSamples(internalLinks);
+  const pageSamples = enrichPageSamples(detectPageSamples(internalLinks), new URL(homepage.finalUrl));
   const pagesToFetch = selectPagesToFetch(pageSamples);
   const secondaryPages = await Promise.all(pagesToFetch.map((page) => fetchObservation(page.url, page.role)));
   const pagesScanned = [homepageObservation, ...secondaryPages];
@@ -33,6 +33,7 @@ export async function scanStore(inputUrl: string): Promise<ScanResult> {
   const aiVisibility = buildAiVisibility(pageSamples, pagesScanned, structuredData, paymentProviders);
   const productSummary = buildProductSummary(pagesScanned);
   const paymentVisibility = buildPaymentVisibility(pagesScanned, paymentProviders);
+  const checkoutReadiness = buildCheckoutReadiness(pageSamples, pagesScanned, productSummary, aiVisibility, paymentVisibility);
 
   const base = {
     scanId: crypto.randomUUID(),
@@ -49,15 +50,16 @@ export async function scanStore(inputUrl: string): Promise<ScanResult> {
     aiVisibility,
     productSummary,
     paymentVisibility,
+    checkoutReadiness,
   };
   const scored = buildScore(base);
 
   return {
     ...base,
     ...scored,
-    priorityFixes: buildPriorityFixes(scored.issues, aiVisibility, paymentVisibility),
+    priorityFixes: buildPriorityFixes(scored.issues, aiVisibility, paymentVisibility, checkoutReadiness),
     merchantSummary: buildMerchantSummary(scored.score, aiVisibility, paymentVisibility, productSummary),
-    readinessLayers: buildReadinessLayers(productSummary, aiVisibility, paymentVisibility, signals),
+    readinessLayers: buildReadinessLayers(productSummary, aiVisibility, paymentVisibility, checkoutReadiness, signals),
   };
 }
 
@@ -140,6 +142,9 @@ async function fetchObservation(url: string, role: PageRole): Promise<PageObserv
         hasOfferSchema: false,
         hasPaymentSignal: false,
         hasContactSignal: false,
+        hasCheckoutForm: false,
+        hasCheckoutSecuritySignal: false,
+        hasBotProtectionSignal: false,
       },
       schemaTypes: [],
       paymentProviders: [],
@@ -170,6 +175,9 @@ function observePage(url: string, role: PageRole, html: string, status: number):
       hasOfferSchema: structuredData.hasOfferSchema,
       hasPaymentSignal: paymentProviders.length > 0 || /\b(payment|pembayaran|bayar|checkout|mercadopago|razorpay|xendit|midtrans|paymongo|paystack)\b/i.test(combined),
       hasContactSignal: /\b(contact|kontak|hubungi|whatsapp|wa\.me|mailto:|phone|tel:|contato|contacto)\b/i.test(combined),
+      hasCheckoutForm: /name=["']?(billing_|shipping_|payment_method|woocommerce_checkout|checkout|place_order)|id=["']?(payment|place_order|order_review|customer_details)|class=["'][^"']*(woocommerce-checkout|checkout|payment_method)/i.test(combined),
+      hasCheckoutSecuritySignal: /\b(secure checkout|ssl|https|safe payment|pagamento seguro|pago seguro|pembayaran aman|checkout seguro|compra segura)\b/i.test(combined),
+      hasBotProtectionSignal: /\b(cf-chl|access denied|checking your browser|attention required|enable javascript and cookies|verify you are human|browser check)\b/i.test(combined),
     },
     schemaTypes: structuredData.schemaTypes,
     paymentProviders,
@@ -197,6 +205,17 @@ function selectPagesToFetch(samples: ReturnType<typeof detectPageSamples>): Arra
     seen.add(page.url);
     return true;
   }).slice(0, 10);
+}
+
+function enrichPageSamples(samples: ReturnType<typeof detectPageSamples>, base: URL): ReturnType<typeof detectPageSamples> {
+  const fromOrigin = (path: string) => new URL(path, base.origin).toString();
+  const withDefaults = (current: string[], defaults: string[]) => Array.from(new Set([...current, ...defaults.map(fromOrigin)])).slice(0, 6);
+
+  return {
+    ...samples,
+    cart: withDefaults(samples.cart, ["/cart/", "/cart", "/carrito/", "/carrinho/", "/keranjang/"]),
+    checkout: withDefaults(samples.checkout, ["/checkout/", "/checkout", "/finalizar-compra/", "/finalizar/", "/pagar/", "/checkout/order-pay/"]),
+  };
 }
 
 function pageTextForScoring(page: PageObservation): string {
@@ -407,10 +426,119 @@ function buildPaymentVisibility(pages: PageObservation[], providers: DetectedPro
   };
 }
 
+function buildCheckoutReadiness(
+  samples: ReturnType<typeof detectPageSamples>,
+  pages: PageObservation[],
+  products: ProductSummary,
+  visibility: ScanResult["aiVisibility"],
+  payment: PaymentVisibility,
+): CheckoutReadiness {
+  const cartPages = pages.filter((page) => page.role === "cart");
+  const checkoutPages = pages.filter((page) => page.role === "checkout");
+  const fetchedCart = cartPages.find((page) => page.fetched);
+  const fetchedCheckout = checkoutPages.find((page) => page.fetched);
+  const blockedPages = pages.filter((page) => page.signals.hasBotProtectionSignal || /blocked|access denied|forbidden|captcha|cloudflare/i.test(page.error ?? ""));
+  const hasCheckoutForm = checkoutPages.some((page) => page.signals.hasCheckoutForm);
+  const hasSecurityCopy = checkoutPages.some((page) => page.signals.hasCheckoutSecuritySignal);
+  const checkoutEvidence = [
+    ...cartPages.map((page) => `${page.role}: ${page.fetched ? "reachable" : page.error ?? "not reachable"} (${page.url})`),
+    ...checkoutPages.map((page) => `${page.role}: ${page.fetched ? "reachable" : page.error ?? "not reachable"} (${page.url})`),
+  ].slice(0, 5);
+
+  const checks: CheckoutReadiness["checks"] = [
+    {
+      id: "product_selectable",
+      label: "Product can be selected",
+      status: products.scanned > 0 && products.withAddToCart > 0 ? "ready" : products.scanned > 0 ? "partial" : "blocked",
+      explanation: products.scanned > 0 && products.withAddToCart > 0
+        ? "Product pages expose add-to-cart or buying controls."
+        : products.scanned > 0
+          ? "Products were found, but add-to-cart controls were not consistently visible to the scanner."
+          : "The scanner could not find product pages to test a buying path.",
+      evidence: [`${products.withAddToCart}/${products.scanned} scanned product pages expose add-to-cart signals`],
+    },
+    {
+      id: "cart_reachable",
+      label: "Cart page can be reached",
+      status: fetchedCart ? "ready" : samples.cart.length > 0 ? "partial" : "blocked",
+      explanation: fetchedCart
+        ? "A public cart page was discovered and loaded with a safe GET request."
+        : samples.cart.length > 0
+          ? "A cart URL was discovered, but it did not load cleanly during this scan."
+          : "No cart page was discovered from public links.",
+      evidence: cartPages.length > 0 ? checkoutEvidence.filter((item) => item.startsWith("cart:")) : samples.cart,
+    },
+    {
+      id: "checkout_reachable",
+      label: "Checkout page can be reached",
+      status: fetchedCheckout && (hasCheckoutForm || payment.level !== "not_visible" || hasSecurityCopy) ? "ready" : fetchedCheckout ? "partial" : samples.checkout.length > 0 ? "partial" : "blocked",
+      explanation: fetchedCheckout
+        ? "The checkout page loaded publicly. The scanner checks visibility only and does not submit checkout forms."
+        : samples.checkout.length > 0
+          ? "A checkout URL was discovered, but it did not load cleanly during this scan."
+          : "No checkout page was discovered from public links.",
+      evidence: checkoutPages.length > 0 ? checkoutEvidence.filter((item) => item.startsWith("checkout:")) : samples.checkout,
+    },
+    {
+      id: "payment_context",
+      label: "Payment options are understandable",
+      status: payment.level === "confirmed_provider" ? "ready" : payment.level === "generic_payment_visible" ? "partial" : "blocked",
+      explanation: payment.level === "confirmed_provider"
+        ? "A known regional payment provider was detected."
+        : payment.level === "generic_payment_visible"
+          ? "Payment language is visible, but the scanner could not confirm the actual provider."
+          : "The scanner could not identify payment provider context.",
+      evidence: payment.evidence,
+    },
+    {
+      id: "trust_policies",
+      label: "Shipping and returns are clear before purchase",
+      status: visibility.shipping !== "missing" && visibility.returns !== "missing" ? "ready" : visibility.shipping !== "missing" || visibility.returns !== "missing" ? "partial" : "blocked",
+      explanation: visibility.shipping !== "missing" && visibility.returns !== "missing"
+        ? "Shipping and return policy pages were discoverable from public links."
+        : "AI assistants may not have enough delivery or return confidence before recommending checkout.",
+      evidence: [`Shipping: ${visibility.shipping}`, `Returns: ${visibility.returns}`],
+    },
+    {
+      id: "safe_payment_link",
+      label: "Safe payment link for AI shopper",
+      status: "requires_plugin",
+      explanation: "Creating a safe checkout or payment link requires the WooCommerce plugin and merchant-approved payment gateway adapter.",
+      evidence: ["Public scanner does not create carts, submit checkout, or touch payment data."],
+    },
+  ];
+
+  const coreBlocked = checks.some((check) => check.status === "blocked" && ["product_selectable", "cart_reachable", "checkout_reachable", "payment_context"].includes(check.id));
+  const partial = checks.some((check) => check.status === "partial" || check.status === "requires_plugin");
+  const status = coreBlocked || blockedPages.length > 0
+    ? "blocked_or_unclear"
+    : partial
+      ? "partially_ready"
+      : "ready_to_guide";
+  const label = {
+    ready_to_guide: "Ready to guide a buyer",
+    partially_ready: "Partially ready",
+    blocked_or_unclear: "Blocked or unclear",
+  }[status];
+  const summary = status === "ready_to_guide"
+    ? "AI assistants can understand the public buying path, but automated payment handoff still requires the plugin."
+    : status === "partially_ready"
+      ? "AI assistants can understand parts of the buying path, but checkout/payment handoff is not fully machine-readable yet."
+      : "AI assistants may struggle to guide a buyer through cart, checkout, or payment with confidence.";
+
+  return {
+    status,
+    label,
+    summary,
+    checks,
+  };
+}
+
 function buildPriorityFixes(
   issues: ScanResult["issues"],
   visibility: ScanResult["aiVisibility"],
   payment: PaymentVisibility,
+  checkout?: CheckoutReadiness,
 ): PriorityFix[] {
   const fixes: PriorityFix[] = [];
   const hasIssue = (id: string) => issues.some((issue) => issue.id === id);
@@ -442,6 +570,24 @@ function buildPriorityFixes(
       effort: "low",
       owner: "plugin",
       reason: "The checkout may work for humans, but AI agents need a safe summary of how payment is completed.",
+    });
+  }
+
+  if (checkout?.status === "blocked_or_unclear") {
+    fixes.push({
+      title: "Make the buying path clear for AI shoppers",
+      impact: "high",
+      effort: "medium",
+      owner: "both",
+      reason: "Even when products are readable, AI assistants need a clear path from product selection to cart, checkout, and safe payment handoff.",
+    });
+  } else if (checkout?.status === "partially_ready") {
+    fixes.push({
+      title: "Add AI-friendly checkout handoff",
+      impact: "medium",
+      effort: "medium",
+      owner: "plugin",
+      reason: "This store is partly readable for AI, but the plugin is needed to prepare a safe checkout/payment link for the shopper.",
     });
   }
 
@@ -506,6 +652,7 @@ function buildReadinessLayers(
   products: ProductSummary,
   visibility: ScanResult["aiVisibility"],
   payment: PaymentVisibility,
+  checkoutReadiness: CheckoutReadiness,
   signals: ScanResult["signals"],
 ): ReadinessLayer[] {
   const productStrong = products.scanned > 0
@@ -514,6 +661,11 @@ function buildReadinessLayers(
     && products.withProductSchema >= Math.ceil(products.scanned * 0.6);
   const trustMissing = visibility.shipping === "missing" || visibility.returns === "missing";
   const checkoutMissing = visibility.checkout === "missing";
+  const checkoutLayerStatus = checkoutReadiness.status === "ready_to_guide"
+    ? "strong"
+    : checkoutReadiness.status === "partially_ready"
+      ? "partial"
+      : "missing";
 
   return [
     {
@@ -560,7 +712,7 @@ function buildReadinessLayers(
     {
       id: "checkout_payment",
       title: "Checkout and payment layer",
-      status: payment.level === "confirmed_provider" && !checkoutMissing ? "strong" : payment.level === "not_visible" && checkoutMissing ? "missing" : "partial",
+      status: checkoutLayerStatus,
       impact: "medium",
       pluginCanFix: "partial",
       estimatedLift: payment.level === "confirmed_provider" ? "+0.2 to +0.5" : "+0.5 to +1.2",

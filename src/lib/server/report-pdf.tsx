@@ -34,9 +34,9 @@ function ReportDocument({ result, locale }: { result: ScanResult; locale: Locale
             <Text style={styles.title}>{copy.scoreTitle}</Text>
             <Text style={styles.body}>{result.merchantSummary.body}</Text>
           </View>
-          <View style={styles.scoreCard}>
+          <View style={[styles.scoreCard, scoreCardStyle(result.score)]}>
             <Text style={styles.scoreLabel}>{copy.scoreLabel}</Text>
-            <Text style={styles.score}>{result.score.toFixed(1)}</Text>
+            <Text style={[styles.score, scoreTextStyle(result.score)]}>{result.score.toFixed(1)}</Text>
             <Text style={styles.scoreOutOf}>/10</Text>
           </View>
         </View>
@@ -207,6 +207,18 @@ function statusStyle(status: string) {
   return styles.pillBad;
 }
 
+function scoreCardStyle(score: number) {
+  if (score >= 8) return styles.scoreCardGood;
+  if (score >= 6) return styles.scoreCardWarn;
+  return styles.scoreCardBad;
+}
+
+function scoreTextStyle(score: number) {
+  if (score >= 8) return styles.scoreGood;
+  if (score >= 6) return styles.scoreWarn;
+  return styles.scoreBad;
+}
+
 function impactStyle(impact: string) {
   if (impact === "high") return styles.impactHigh;
   if (impact === "medium") return styles.impactMedium;
@@ -307,22 +319,40 @@ const styles = StyleSheet.create({
   scoreCard: {
     width: 128,
     borderRadius: 8,
-    backgroundColor: colors.ink,
+    backgroundColor: "#fff7ed",
     padding: 16,
     justifyContent: "center",
   },
+  scoreCardGood: {
+    backgroundColor: "#edf7f5",
+  },
+  scoreCardWarn: {
+    backgroundColor: "#fff7ed",
+  },
+  scoreCardBad: {
+    backgroundColor: "#fef2f2",
+  },
   scoreLabel: {
-    color: "#cbd5e1",
+    color: colors.muted,
     fontSize: 9,
   },
   score: {
-    color: colors.lime,
+    color: colors.amber,
     fontSize: 48,
     fontWeight: 700,
     marginTop: 8,
   },
+  scoreGood: {
+    color: colors.teal,
+  },
+  scoreWarn: {
+    color: "#b45309",
+  },
+  scoreBad: {
+    color: colors.red,
+  },
   scoreOutOf: {
-    color: "#ffffff",
+    color: colors.muted,
     fontSize: 14,
   },
   metricGrid: {

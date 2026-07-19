@@ -3,7 +3,7 @@
 import type { ScanResult } from "@/lib/scanner/types";
 import { defaultLocale, getDictionary, localeLabels, localeMarkets, locales, type Dictionary, type Locale } from "@/lib/i18n";
 import { aiVisibilityLabel, displayEffort, displayImpact, displayOwner, displayPaymentLevel, displayPluginFix, displayStatus, localizeScanResult, pageRoleLabel, scoreBreakdownLabel } from "@/lib/report-localization";
-import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Loader2, LockKeyhole, Mail, Search, ShieldCheck, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bot, CheckCircle2, CreditCard, Eye, FileSearch, Gauge, Globe2, Layers3, Link2, Loader2, LockKeyhole, Mail, Search, ShieldCheck, ShoppingCart, Sparkles, Store, TrendingUp, Wrench, XCircle } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 const examples = ["casanativa.mx", "ashaskin.in", "baliminigoods.id"];
@@ -622,6 +622,8 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
         )}
       </section>
 
+      <CheckoutReadinessBlock result={report} copy={copy} />
+
       <section className="card">
         <div className="card-header">
           <h3><Wrench size={18} /> {copy.report.fixesTitle}</h3>
@@ -743,9 +745,55 @@ function Report({ result, copy, locale }: { result: ScanResult; copy: Dictionary
   );
 }
 
-function Score({ score }: { score: number }) {
+function CheckoutReadinessBlock({ result, copy }: { result: ScanResult; copy: Dictionary }) {
   return (
-    <div className="score">
+    <section className="card checkout-readiness-card">
+      <div className="card-header">
+        <h3><ShoppingCart size={18} /> {copy.report.checkoutReadiness}</h3>
+        <span className={`checkout-status ${result.checkoutReadiness.status}`}>
+          {copy.report.checkoutLabels[result.checkoutReadiness.status]}
+        </span>
+      </div>
+      <p className="checkout-summary">{result.checkoutReadiness.summary}</p>
+      <span className="checkout-subtitle">{copy.report.checkoutSubtitle}</span>
+      <div className="checkout-check-grid">
+        {result.checkoutReadiness.checks.map((check) => (
+          <article className={`checkout-check ${check.status}`} key={check.id}>
+            <div>
+              <CheckoutCheckIcon status={check.status} />
+              <strong>{check.label}</strong>
+            </div>
+            <span>{copy.report.checkoutLabels[check.status]}</span>
+            <p>{check.explanation}</p>
+            {check.evidence.length > 0 && (
+              <ul className="evidence-list">
+                {check.evidence.slice(0, 2).map((item) => <li key={item}>{item}</li>)}
+              </ul>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CheckoutCheckIcon({ status }: { status: ScanResult["checkoutReadiness"]["checks"][number]["status"] }) {
+  if (status === "ready") {
+    return <CheckCircle2 size={17} />;
+  }
+
+  if (status === "requires_plugin") {
+    return <Link2 size={17} />;
+  }
+
+  return <AlertTriangle size={17} />;
+}
+
+function Score({ score }: { score: number }) {
+  const tone = score >= 8 ? "good" : score >= 6 ? "warn" : "bad";
+
+  return (
+    <div className={`score ${tone}`}>
       <Gauge size={22} />
       <strong>{score.toFixed(1)}</strong>
       <span>/10</span>
@@ -829,24 +877,15 @@ function PluginValueBlock({ result, copy }: { result: ScanResult; copy: Dictiona
       </div>
 
       <div className="value-grid">
-        <ValueCard
-          icon={<Layers3 size={20} />}
-          title={copy.pluginValue.cards[0].title}
-          text={copy.pluginValue.cards[0].text}
-          outcome={copy.pluginValue.cards[0].outcome}
-        />
-        <ValueCard
-          icon={<Wrench size={20} />}
-          title={copy.pluginValue.cards[1].title}
-          text={copy.pluginValue.cards[1].text}
-          outcome={copy.pluginValue.cards[1].outcome}
-        />
-        <ValueCard
-          icon={<TrendingUp size={20} />}
-          title={copy.pluginValue.cards[2].title}
-          text={copy.pluginValue.cards[2].text}
-          outcome={copy.pluginValue.cards[2].outcome}
-        />
+        {copy.pluginValue.cards.map((card, index) => (
+          <ValueCard
+            icon={[<Layers3 size={20} key="layers" />, <ShoppingCart size={20} key="cart" />, <Wrench size={20} key="wrench" />, <TrendingUp size={20} key="trend" />][index] ?? <Sparkles size={20} />}
+            title={card.title}
+            text={card.text}
+            outcome={card.outcome}
+            key={card.title}
+          />
+        ))}
       </div>
 
       <div className="lost-opportunity">

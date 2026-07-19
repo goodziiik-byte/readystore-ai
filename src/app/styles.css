@@ -986,8 +986,23 @@ p {
   border-radius: 50%;
   display: grid;
   place-items: center;
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.score.good {
   background: #edf7f5;
   color: #0c6b61;
+}
+
+.score.warn {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.score.bad {
+  background: #fef2f2;
+  color: #991b1b;
 }
 
 .score strong {
@@ -1214,6 +1229,113 @@ meter {
 .payment-level.not_visible {
   color: #991b1b;
   background: #fee2e2;
+}
+
+.checkout-readiness-card {
+  display: grid;
+  gap: 14px;
+}
+
+.checkout-status {
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkout-status.ready_to_guide {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.checkout-status.partially_ready {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.checkout-status.blocked_or_unclear {
+  color: #991b1b;
+  background: #fee2e2;
+}
+
+.checkout-summary {
+  max-width: 880px;
+  margin: 0;
+}
+
+.checkout-subtitle {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.checkout-check-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.checkout-check {
+  border: 1px solid #e7ded0;
+  border-radius: 8px;
+  padding: 13px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.checkout-check > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkout-check > div svg {
+  flex: 0 0 auto;
+}
+
+.checkout-check > span {
+  width: fit-content;
+  border-radius: 8px;
+  padding: 5px 7px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.checkout-check p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.checkout-check.ready {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.checkout-check.ready svg {
+  color: #166534;
+}
+
+.checkout-check.partial,
+.checkout-check.requires_plugin {
+  border-color: #facc15;
+  background: #fefce8;
+}
+
+.checkout-check.partial svg,
+.checkout-check.requires_plugin svg {
+  color: #b45309;
+}
+
+.checkout-check.blocked {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.checkout-check.blocked svg {
+  color: #991b1b;
 }
 
 .priority-list {

@@ -46,7 +46,7 @@ export function detectPageSamples(urls: string[]): PageSamples {
   return {
     products: takeMatching(urls, [/\/product\//i, /\/shop\//i, /\/produk\//i, /\/produto\//i, /\/producto\//i, /\/collections?\//i]),
     cart: takeMatching(urls, [/\/cart\b/i, /\/keranjang/i, /\/carrito/i, /\/carrinho/i]),
-    checkout: takeMatching(urls, [/\/checkout\b/i, /\/order/i, /\/finalizar/i, /\/pagar/i]),
+    checkout: takeMatching(urls, [/\/checkout\b/i, /\/order-pay\b/i, /\/finalizar/i, /\/pagar/i, /\/kasir/i, /\/bayar/i]),
     shipping: takeMatching(urls, [/shipping/i, /delivery/i, /pengiriman/i, /envio/i, /entrega/i, /frete/i]),
     returns: takeMatching(urls, [/return/i, /refund/i, /returns/i, /devolu/i, /troca/i, /pengembalian/i]),
     contact: takeMatching(urls, [/contact/i, /kontak/i, /contato/i, /contacto/i, /whatsapp/i]),
