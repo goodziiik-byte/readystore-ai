@@ -29,7 +29,7 @@ export function ReadystorePage({ locale }: { locale: Locale }) {
         <BeforeAfter />
         <CtaSection />
       </main>
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </ScanProvider>
   )
 }

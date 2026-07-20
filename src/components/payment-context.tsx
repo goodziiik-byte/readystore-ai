@@ -1,3 +1,6 @@
+"use client"
+
+import { useCopy } from "@/components/use-copy"
 import { Globe } from "lucide-react"
 
 const PROVIDERS = [
@@ -14,20 +17,21 @@ const PROVIDERS = [
 ]
 
 export function PaymentContext() {
+  const copy = useCopy()
+
   return (
     <section id="payments" className="scroll-mt-20 bg-background py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="flex items-center justify-center gap-2 text-sm font-medium text-primary">
             <Globe className="size-4" />
-            Local payments matter
+            {copy.marketing.payments.eyebrow}
           </p>
           <h2 className="mt-2 text-balance text-2xl font-semibold tracking-tight sm:text-4xl">
-            Built for the payment methods that actually convert
+            {copy.marketing.payments.title}
           </h2>
           <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-            Shoppers in Latin America, Southeast Asia, and Africa buy with local methods. We check
-            whether AI can see the ones your store supports.
+            {copy.marketing.payments.body}
           </p>
         </div>
 

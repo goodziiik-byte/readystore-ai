@@ -1,35 +1,21 @@
+"use client"
+
+import { useCopy } from "@/components/use-copy"
 import { Check, X } from "lucide-react"
 
-const WE_SCAN = [
-  "Public product, price & stock data",
-  "Shipping options and delivery info",
-  "Return and refund policies",
-  "Listed local payment methods",
-  "Content freshness signals",
-  "The path to checkout",
-]
-
-const WE_NEVER = [
-  "Ask for a login or admin access",
-  "Submit or complete any checkout",
-  "Touch payment or card data",
-  "Access private or customer data",
-  "Change anything on your store",
-  "Store your credentials",
-]
-
 export function ScanScope() {
+  const copy = useCopy()
+
   return (
     <section id="scope" className="scroll-mt-20 border-y border-border bg-muted/40 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-medium text-primary">Transparency</p>
+          <p className="text-sm font-medium text-primary">{copy.marketing.safety.eyebrow}</p>
           <h2 className="mt-2 text-balance text-2xl font-semibold tracking-tight sm:text-4xl">
-            What we scan, and what we never do
+            {copy.marketing.safety.title}
           </h2>
           <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-            The scan only reads public pages — the same ones an AI assistant or search engine
-            would see. Nothing more.
+            {copy.marketing.safety.body}
           </p>
         </div>
 
@@ -39,10 +25,10 @@ export function ScanScope() {
               <span className="flex size-7 items-center justify-center rounded-full bg-success/10 text-success">
                 <Check className="size-4" />
               </span>
-              What we scan
+              {copy.marketing.safety.scanTitle}
             </h3>
             <ul className="mt-4 space-y-3">
-              {WE_SCAN.map((item) => (
+              {copy.marketing.safety.scanItems.map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm">
                   <Check className="mt-0.5 size-4 shrink-0 text-success" />
                   {item}
@@ -56,10 +42,10 @@ export function ScanScope() {
               <span className="flex size-7 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                 <X className="size-4" />
               </span>
-              What we never do
+              {copy.marketing.safety.neverTitle}
             </h3>
             <ul className="mt-4 space-y-3">
-              {WE_NEVER.map((item) => (
+              {copy.marketing.safety.neverItems.map((item) => (
                 <li key={item} className="flex items-start gap-2.5 text-sm text-muted-foreground">
                   <X className="mt-0.5 size-4 shrink-0 text-destructive" />
                   {item}

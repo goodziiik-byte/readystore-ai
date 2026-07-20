@@ -1,7 +1,10 @@
 import { Mail, ScanLine } from "lucide-react"
+import { defaultLocale, getDictionary, type Locale } from "@/lib/i18n"
 
-export function SiteFooter() {
+export function SiteFooter({ locale = defaultLocale }: { locale?: Locale }) {
   const year = new Date().getFullYear()
+  const copy = getDictionary(locale)
+  const localePrefix = locale === defaultLocale ? "" : `/${locale}`
 
   return (
     <footer className="border-t border-border bg-navy text-navy-foreground">
@@ -17,8 +20,7 @@ export function SiteFooter() {
               </span>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-navy-foreground/60">
-              AI readiness scanning for WooCommerce stores. Make sure AI shoppers understand your
-              catalog, policies, payments, and checkout.
+              {copy.footer.body}
             </p>
           </div>
 
@@ -30,17 +32,17 @@ export function SiteFooter() {
               <Mail className="size-4" />
               hello@readystoreai.com
             </a>
-            <a href="/privacy" className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
-              Privacy policy
+            <a href={`${localePrefix}/privacy`} className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
+              {copy.footer.privacy}
             </a>
-            <a href="/terms" className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
-              Terms of service
+            <a href={`${localePrefix}/terms`} className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
+              {copy.footer.terms}
             </a>
           </div>
         </div>
 
         <div className="mt-10 border-t border-navy-foreground/10 pt-6 text-xs text-navy-foreground/50">
-          © {year} Readystore AI. All rights reserved.
+          © {year} Readystore AI. {copy.footer.rights}
         </div>
       </div>
     </footer>

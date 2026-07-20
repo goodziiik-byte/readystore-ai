@@ -1,18 +1,26 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useScan } from "@/components/scan-context"
+import { useCopy } from "@/components/use-copy"
 import { defaultLocale, localeLabels, locales } from "@/lib/i18n"
 import { ScanLine } from "lucide-react"
 
 export function SiteHeader() {
   const { locale, scrollToScanner } = useScan()
+  const copy = useCopy()
+  const [search, setSearch] = useState("")
+
+  useEffect(() => {
+    setSearch(window.location.search)
+  }, [])
 
   const nav = [
-    { label: "How it works", href: "#problem" },
+    { label: copy.nav.howItWorks, href: "#problem" },
     { label: "AI shopper", href: "#simulation" },
-    { label: "What we scan", href: "#scope" },
-    { label: "Payments", href: "#payments" },
+    { label: copy.marketing.safety.scanTitle, href: "#scope" },
+    { label: copy.report.summary.payment, href: "#payments" },
   ]
 
   return (
@@ -44,7 +52,7 @@ export function SiteHeader() {
             {locales.map((item) => (
               <a
                 key={item}
-                href={item === defaultLocale ? "/" : `/${item}`}
+                href={`${item === defaultLocale ? "/" : `/${item}`}${search}`}
                 className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
                   item === locale ? "bg-navy text-navy-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -54,7 +62,7 @@ export function SiteHeader() {
             ))}
           </div>
           <Button size="lg" onClick={scrollToScanner}>
-            Run free scan
+            {copy.hero.scanButton}
           </Button>
         </div>
       </div>

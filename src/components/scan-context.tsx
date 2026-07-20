@@ -67,9 +67,46 @@ function stateFromRatio(value: number, total: number): ScanCheck["state"] {
   return "fail"
 }
 
-function toUiReport(result: ScanResult): UiScanReport {
+function toUiReport(result: ScanResult, locale: Locale): UiScanReport {
   const productTotal = result.productSummary.scanned
-
+  const labels = {
+    en: {
+      products: "Product catalog readable",
+      prices: "Prices & currency exposed",
+      stock: "Stock availability visible",
+      shipping: "Shipping options clear",
+      returns: "Return policy discoverable",
+      payments: "Local payment methods listed",
+      checkout: "Checkout path reachable",
+    },
+    es: {
+      products: "Catalogo de productos legible",
+      prices: "Precios y moneda visibles",
+      stock: "Disponibilidad visible",
+      shipping: "Envio claro",
+      returns: "Devoluciones encontrables",
+      payments: "Pagos locales visibles",
+      checkout: "Camino de checkout alcanzable",
+    },
+    pt: {
+      products: "Catalogo de produtos legivel",
+      prices: "Precos e moeda visiveis",
+      stock: "Disponibilidade visivel",
+      shipping: "Frete claro",
+      returns: "Devolucoes encontraveis",
+      payments: "Pagamentos locais visiveis",
+      checkout: "Caminho de checkout acessivel",
+    },
+    id: {
+      products: "Katalog produk terbaca",
+      prices: "Harga dan mata uang terlihat",
+      stock: "Ketersediaan stok terlihat",
+      shipping: "Opsi pengiriman jelas",
+      returns: "Policy retur ditemukan",
+      payments: "Metode pembayaran lokal terlihat",
+      checkout: "Path checkout bisa dijangkau",
+    },
+  }[locale]
   return {
     url: result.finalUrl || result.requestedUrl,
     score: Math.round(result.score * 10),
@@ -77,32 +114,32 @@ function toUiReport(result: ScanResult): UiScanReport {
     checks: [
       {
         id: "products",
-        label: "Product catalog readable",
+        label: labels.products,
         state: result.platform.woocommerce || productTotal > 0 ? "pass" : "partial",
       },
       {
         id: "prices",
-        label: "Prices & currency exposed",
+        label: labels.prices,
         state: stateFromRatio(result.productSummary.withPrice, productTotal),
       },
       {
         id: "stock",
-        label: "Stock availability visible",
+        label: labels.stock,
         state: stateFromRatio(result.productSummary.withAvailability, productTotal),
       },
       {
         id: "shipping",
-        label: "Shipping options clear",
+        label: labels.shipping,
         state: stateFromVisibility(result.aiVisibility.shipping),
       },
       {
         id: "returns",
-        label: "Return policy discoverable",
+        label: labels.returns,
         state: stateFromVisibility(result.aiVisibility.returns),
       },
       {
         id: "payments",
-        label: "Local payment methods listed",
+        label: labels.payments,
         state:
           result.paymentVisibility.level === "confirmed_provider"
             ? "pass"
@@ -112,7 +149,7 @@ function toUiReport(result: ScanResult): UiScanReport {
       },
       {
         id: "checkout",
-        label: "Checkout path reachable",
+        label: labels.checkout,
         state:
           result.checkoutReadiness.status === "ready_to_guide"
             ? "pass"
@@ -162,7 +199,7 @@ export function ScanProvider({ children, locale }: { children: ReactNode; locale
           throw new Error(payload?.error?.message ?? "Scan failed.")
         }
 
-        setReport(toUiReport(payload as ScanResult))
+        setReport(toUiReport(payload as ScanResult, locale))
         setStatus("done")
       } catch (scanError) {
         setStatus("error")

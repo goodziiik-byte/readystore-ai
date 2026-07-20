@@ -2,9 +2,11 @@
 
 import { Bot } from "lucide-react"
 import { useEffect, useRef } from "react"
+import { useCopy } from "@/components/use-copy"
 
 export function AiShopper() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const copy = useCopy()
 
   useEffect(() => {
     if (videoRef.current) {
@@ -18,17 +20,15 @@ export function AiShopper() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <div>
-            <p className="text-sm font-medium text-primary">AI shopper simulation</p>
+            <p className="text-sm font-medium text-primary">{copy.marketing.shift.eyebrow}</p>
             <h2 className="mt-2 text-balance text-2xl font-semibold tracking-tight sm:text-4xl">
-              See the exact conversation an AI can have about your store
+              {copy.marketing.simulation.title}
             </h2>
             <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-              We simulate how an AI assistant answers real buying questions using only what&apos;s
-              publicly readable on your store. When the data is there, AI closes the sale. When
-              it&apos;s missing, the shopper walks.
+              {copy.marketing.simulation.body}
             </p>
             <ul className="mt-6 space-y-3 text-sm">
-              {["Product & variant availability", "Shipping and delivery times", "Local payment options", "Return and refund policy"].map(
+              {copy.marketing.safety.scanItems.map(
                 (item) => (
                   <li key={item} className="flex items-center gap-2.5">
                     <span className="size-1.5 rounded-full bg-primary" />
@@ -42,7 +42,7 @@ export function AiShopper() {
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <div className="flex items-center gap-2 border-b border-border px-4 py-3 sm:px-6">
               <Bot className="size-4 text-primary" />
-              <span className="text-sm font-medium">AI shopper preview</span>
+              <span className="text-sm font-medium">{copy.marketing.simulation.title}</span>
             </div>
             <video
               ref={videoRef}

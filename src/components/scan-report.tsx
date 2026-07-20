@@ -4,8 +4,15 @@ import { useState, type FormEvent } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useScan, type ScanCheck, type UiScanReport } from "@/components/scan-context"
-import { localeMarkets } from "@/lib/i18n"
+import { getDictionary, localeMarkets, type Locale } from "@/lib/i18n"
 import { report as sampleReport, type LayerState } from "@/lib/report-data"
+import {
+  displayImpact,
+  displayPluginFix,
+  displayStatus,
+  localizeScanResult,
+  scoreBreakdownLabel,
+} from "@/lib/report-localization"
 import {
   AlertTriangle,
   ArrowRight,
@@ -18,17 +25,18 @@ import {
 } from "lucide-react"
 
 export function ScanReport() {
-  const { status, report, error, reset } = useScan()
+  const { status, report, error, reset, locale } = useScan()
+  const copy = getDictionary(locale)
 
   return (
     <section id="scan" className="scroll-mt-20 bg-background py-16 sm:py-20">
       <div className="mx-auto max-w-3xl px-4 sm:px-6">
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            Your AI readiness report
+            {copy.report.scanReport}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            A live preview of how AI assistants read your store.
+            {copy.report.seesTitle}
           </p>
         </div>
 
@@ -44,7 +52,7 @@ export function ScanReport() {
 
           <div className="p-5 sm:p-6">
             {status === "idle" && <IdleState />}
-            {status === "scanning" && <ScanningState />}
+            {status === "scanning" && <ScanningState locale={locale} />}
             {status === "error" && <ErrorState message={error} onRetry={reset} />}
             {status === "done" && report && <DoneState report={report} onReset={reset} />}
           </div>
@@ -63,12 +71,14 @@ const LAYER_STYLE: Record<LayerState, { text: string; badge: string; label: stri
 function IdleState() {
   const { score, store, highlights, layers } = sampleReport
   const pct = (score.value / score.max) * 100
+  const { locale } = useScan()
+  const copy = getDictionary(locale)
 
   return (
     <div>
       <div className="mb-4 flex items-center gap-2">
         <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-          Example report
+          {copy.report.summary.confirmed}
         </span>
         <span className="font-mono text-xs text-muted-foreground">{store.url}</span>
       </div>
@@ -98,7 +108,7 @@ function IdleState() {
           <div>
             <p className="text-base font-semibold">{score.label}</p>
             <p className="text-xs text-muted-foreground">
-              {store.platform} · {store.pagesAnalyzed} pages analyzed
+              {store.platform} · {store.pagesAnalyzed} {copy.report.pagesScanned}
             </p>
           </div>
         </div>
@@ -124,7 +134,7 @@ function IdleState() {
       </ul>
 
       {/* Readiness layers snapshot */}
-      <p className="mt-6 text-sm font-medium">Readiness layers</p>
+      <p className="mt-6 text-sm font-medium">{copy.report.readinessLayers}</p>
       <ul className="mt-2 space-y-2">
         {layers.map((layer) => {
           const s = LAYER_STYLE[layer.state]
@@ -145,11 +155,11 @@ function IdleState() {
 
       <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-primary/25 bg-accent/40 p-4 text-center sm:flex-row sm:justify-between sm:text-left">
         <p className="text-sm text-muted-foreground">
-          This is a sample. Scan your store above to generate your own — or explore the full report.
+          {copy.report.capture.body}
         </p>
         <Button asChild size="lg" variant="outline" className="shrink-0 bg-transparent">
           <Link href="/report">
-            View full example report
+            {copy.report.scanReport}
             <ArrowRight className="size-4" />
           </Link>
         </Button>
@@ -158,18 +168,14 @@ function IdleState() {
   )
 }
 
-function ScanningState() {
-  const steps = [
-    "Fetching public pages",
-    "Reading product & price data",
-    "Checking policies & payments",
-    "Tracing checkout path",
-  ]
+function ScanningState({ locale }: { locale: Locale }) {
+  const copy = getDictionary(locale)
+  const steps = copy.marketing.diagnosis.cards.map((card) => `${card.title}: ${card.text}`)
   return (
     <div className="py-6">
       <div className="flex items-center gap-2 text-sm font-medium text-primary">
         <Loader2 className="size-4 animate-spin" />
-        Scanning your store…
+        {copy.hero.scanning}...
       </div>
       <ul className="mt-5 space-y-3 font-mono text-sm">
         {steps.map((step, i) => (
@@ -191,18 +197,21 @@ function ScanningState() {
 }
 
 function ErrorState({ message, onRetry }: { message: string | null; onRetry: () => void }) {
+  const { locale } = useScan()
+  const copy = getDictionary(locale)
+
   return (
     <div className="flex flex-col items-center gap-3 py-10 text-center">
       <span className="flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
         <AlertTriangle className="size-5" />
       </span>
-      <p className="text-sm font-medium">We couldn&apos;t scan that URL</p>
+      <p className="text-sm font-medium">{copy.report.capture.fallbackError}</p>
       <p className="max-w-sm text-sm text-muted-foreground">
-        {message ?? "Something went wrong. Please try again."}
+        {message ?? copy.report.capture.fallbackError}
       </p>
       <Button variant="outline" size="lg" onClick={onRetry} className="mt-1">
         <RotateCcw className="size-4" />
-        Try again
+        {copy.hero.scanButton}
       </Button>
     </div>
   )
@@ -241,13 +250,21 @@ function DoneState({
 }) {
   const scoreColor =
     report.score >= 75 ? "text-success" : report.score >= 45 ? "text-warning" : "text-destructive"
+  const { locale } = useScan()
+  const copy = getDictionary(locale)
+  const localized = localizeScanResult(report.raw, locale)
+  const stateLabels: Record<ScanCheck["state"], string> = {
+    pass: copy.report.checkoutLabels.ready,
+    partial: copy.report.checkoutLabels.partial,
+    fail: copy.report.checkoutLabels.blocked,
+  }
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
         <div>
           <p className="font-mono text-xs text-muted-foreground">{report.url}</p>
-          <p className="mt-1 text-sm font-medium">AI readiness score</p>
+          <p className="mt-1 text-sm font-medium">{copy.report.seesTitle}</p>
         </div>
         <div className={`text-4xl font-semibold ${scoreColor}`}>
           {report.score}
@@ -269,12 +286,14 @@ function DoneState({
                 {check.label}
               </span>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.badge}`}>
-                {s.label}
+                {stateLabels[check.state]}
               </span>
             </li>
           )
         })}
       </ul>
+
+      <LiveReportDetails result={localized} locale={locale} />
 
       <ReportEmailForm report={report} />
 
@@ -283,14 +302,96 @@ function DoneState({
         className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <RotateCcw className="size-3.5" />
-        Scan another store
+        {copy.hero.scanButton}
       </button>
+    </div>
+  )
+}
+
+function LiveReportDetails({ result, locale }: { result: UiScanReport["raw"]; locale: Locale }) {
+  const copy = getDictionary(locale)
+  const product = result.productSummary
+
+  return (
+    <div className="mt-6 space-y-4">
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h3 className="text-sm font-semibold">{copy.report.readinessLayers}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{result.merchantSummary.body}</p>
+        <div className="mt-4 space-y-2">
+          {result.readinessLayers.map((layer) => (
+            <div key={layer.id} className="rounded-lg border border-border/70 bg-card p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold">{layer.title}</p>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${layer.status === "strong" ? "bg-success/10 text-success" : layer.status === "partial" ? "bg-warning/10 text-warning" : "bg-destructive/10 text-destructive"}`}>
+                  {displayStatus(layer.status, locale)}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{layer.whyItMatters}</p>
+              <div className="mt-2 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                <span>{copy.report.impact}: {displayImpact(layer.impact, locale)}</span>
+                <span>{copy.report.pluginFix}: {displayPluginFix(layer.pluginCanFix, locale)}</span>
+                <span>{copy.report.estLift}: {layer.estimatedLift}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-background p-4">
+          <h3 className="text-sm font-semibold">{copy.report.productSummary}</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            <li>{product.scanned} {copy.report.inspected}</li>
+            <li>{product.withPrice}/{product.scanned} {copy.report.ratios[0]}</li>
+            <li>{product.withAvailability}/{product.scanned} {copy.report.ratios[1]}</li>
+            <li>{product.withProductSchema}/{product.scanned} {copy.report.ratios[2]}</li>
+          </ul>
+        </div>
+
+        <div className="rounded-xl border border-border bg-background p-4">
+          <h3 className="text-sm font-semibold">{copy.report.checkoutReadiness}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{result.checkoutReadiness.summary}</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {result.checkoutReadiness.checks.map((check) => (
+              <li key={check.id}>{check.label}: {copy.report.checkoutLabels[check.status]}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-success/25 bg-success/5 p-4">
+          <h3 className="text-sm font-semibold">{copy.report.aiCan}</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {result.aiCanUnderstand.slice(0, 5).map((item) => <li key={item}>- {item}</li>)}
+          </ul>
+        </div>
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
+          <h3 className="text-sm font-semibold">{copy.report.aiMiss}</h3>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {result.aiMayMiss.slice(0, 5).map((item) => <li key={item}>- {item}</li>)}
+          </ul>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border bg-background p-4">
+        <h3 className="text-sm font-semibold">{copy.report.scoreBreakdown}</h3>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {Object.entries(result.scoreBreakdown).map(([key, value]) => (
+            <div key={key} className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 text-sm">
+              <span className="text-muted-foreground">{scoreBreakdownLabel(key, locale)}</span>
+              <span className="font-medium">{value}/10</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
 
 function ReportEmailForm({ report }: { report: UiScanReport }) {
   const { locale } = useScan()
+  const copy = getDictionary(locale)
   const [email, setEmail] = useState("")
   const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -317,14 +418,14 @@ function ReportEmailForm({ report }: { report: UiScanReport }) {
       const payload = await response.json()
 
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "Unable to send report.")
+        throw new Error(payload?.error?.message ?? copy.report.capture.fallbackError)
       }
 
       setState("sent")
-      setMessage(`Thanks — your full PDF report is on its way to ${email}.`)
+      setMessage(`${copy.report.capture.sent} ${email}`)
     } catch (error) {
       setState("error")
-      setMessage(error instanceof Error ? error.message : "Unable to send report.")
+      setMessage(error instanceof Error ? error.message : copy.report.capture.fallbackError)
     }
   }
 
@@ -339,31 +440,30 @@ function ReportEmailForm({ report }: { report: UiScanReport }) {
         <form onSubmit={handleSubmit}>
           <p className="flex items-center gap-2 text-sm font-medium">
             <FileText className="size-4 text-primary" />
-            Get the full PDF report
+            {copy.report.capture.eyebrow}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            A detailed breakdown with fixes, sent to your inbox.
+            {copy.report.capture.body}
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <label htmlFor="report-email" className="sr-only">
-              Email address
+              {copy.report.capture.label}
             </label>
             <input
               id="report-email"
               type="email"
               required
-              placeholder="you@yourstore.com"
+              placeholder={copy.report.capture.placeholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-3 focus:ring-ring/30"
             />
             <Button type="submit" size="lg" className="h-10" disabled={state === "sending"}>
-              {state === "sending" ? "Sending..." : "Email me the report"}
+              {state === "sending" ? `${copy.report.capture.sending}...` : copy.report.capture.button}
             </Button>
           </div>
           <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-            No spam. We only send this report, product launch announcements, and early-access
-            updates. You can unsubscribe anytime.
+            {copy.report.capture.disclaimer}
           </p>
           {state === "error" && message ? (
             <p className="mt-2 text-xs font-medium text-destructive">{message}</p>
