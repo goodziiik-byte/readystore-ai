@@ -1,0 +1,193 @@
+"use client"
+
+import type { Locale } from "@/lib/i18n"
+import type { ScanResult } from "@/lib/scanner/types"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react"
+
+export type ScanStatus = "idle" | "scanning" | "done" | "error"
+
+export type ScanCheck = {
+  id: string
+  label: string
+  state: "pass" | "partial" | "fail"
+}
+
+export type UiScanReport = {
+  url: string
+  score: number
+  checks: ScanCheck[]
+  raw: ScanResult
+}
+
+type ScanContextValue = {
+  url: string
+  setUrl: (url: string) => void
+  status: ScanStatus
+  report: UiScanReport | null
+  error: string | null
+  locale: Locale
+  runScan: (url: string) => Promise<void>
+  reset: () => void
+  scrollToScanner: () => void
+}
+
+const ScanContext = createContext<ScanContextValue | null>(null)
+
+function normalizeUrl(raw: string): string | null {
+  const value = raw.trim()
+  if (!value) return null
+  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`
+
+  try {
+    const parsed = new URL(withProtocol)
+    if (!parsed.hostname.includes(".")) return null
+    return parsed.origin + (parsed.pathname === "/" ? "" : parsed.pathname)
+  } catch {
+    return null
+  }
+}
+
+function stateFromVisibility(value: "clear" | "partial" | "missing"): ScanCheck["state"] {
+  if (value === "clear") return "pass"
+  if (value === "partial") return "partial"
+  return "fail"
+}
+
+function stateFromRatio(value: number, total: number): ScanCheck["state"] {
+  if (total <= 0) return "fail"
+  if (value === total) return "pass"
+  if (value > 0) return "partial"
+  return "fail"
+}
+
+function toUiReport(result: ScanResult): UiScanReport {
+  const productTotal = result.productSummary.scanned
+
+  return {
+    url: result.finalUrl || result.requestedUrl,
+    score: Math.round(result.score * 10),
+    raw: result,
+    checks: [
+      {
+        id: "products",
+        label: "Product catalog readable",
+        state: result.platform.woocommerce || productTotal > 0 ? "pass" : "partial",
+      },
+      {
+        id: "prices",
+        label: "Prices & currency exposed",
+        state: stateFromRatio(result.productSummary.withPrice, productTotal),
+      },
+      {
+        id: "stock",
+        label: "Stock availability visible",
+        state: stateFromRatio(result.productSummary.withAvailability, productTotal),
+      },
+      {
+        id: "shipping",
+        label: "Shipping options clear",
+        state: stateFromVisibility(result.aiVisibility.shipping),
+      },
+      {
+        id: "returns",
+        label: "Return policy discoverable",
+        state: stateFromVisibility(result.aiVisibility.returns),
+      },
+      {
+        id: "payments",
+        label: "Local payment methods listed",
+        state:
+          result.paymentVisibility.level === "confirmed_provider"
+            ? "pass"
+            : result.paymentVisibility.level === "generic_payment_visible"
+              ? "partial"
+              : "fail",
+      },
+      {
+        id: "checkout",
+        label: "Checkout path reachable",
+        state:
+          result.checkoutReadiness.status === "ready_to_guide"
+            ? "pass"
+            : result.checkoutReadiness.status === "partially_ready"
+              ? "partial"
+              : "fail",
+      },
+    ],
+  }
+}
+
+export function ScanProvider({ children, locale }: { children: ReactNode; locale: Locale }) {
+  const [url, setUrl] = useState("")
+  const [status, setStatus] = useState<ScanStatus>("idle")
+  const [report, setReport] = useState<UiScanReport | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const scrollToScanner = useCallback(() => {
+    document.getElementById("scan")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [])
+
+  const runScan = useCallback(
+    async (rawUrl: string) => {
+      const normalized = normalizeUrl(rawUrl)
+
+      if (!normalized) {
+        setStatus("error")
+        setReport(null)
+        setError("Enter a valid store URL, e.g. https://yourstore.com")
+        return
+      }
+
+      setError(null)
+      setUrl(normalized)
+      setStatus("scanning")
+      setReport(null)
+
+      try {
+        const response = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: normalized, locale }),
+        })
+        const payload = await response.json()
+
+        if (!response.ok) {
+          throw new Error(payload?.error?.message ?? "Scan failed.")
+        }
+
+        setReport(toUiReport(payload as ScanResult))
+        setStatus("done")
+      } catch (scanError) {
+        setStatus("error")
+        setError(scanError instanceof Error ? scanError.message : "Scan failed.")
+      }
+    },
+    [locale],
+  )
+
+  const reset = useCallback(() => {
+    setStatus("idle")
+    setReport(null)
+    setError(null)
+  }, [])
+
+  const value = useMemo(
+    () => ({ url, setUrl, status, report, error, locale, runScan, reset, scrollToScanner }),
+    [url, status, report, error, locale, runScan, reset, scrollToScanner],
+  )
+
+  return <ScanContext.Provider value={value}>{children}</ScanContext.Provider>
+}
+
+export function useScan() {
+  const ctx = useContext(ScanContext)
+  if (!ctx) throw new Error("useScan must be used within a ScanProvider")
+  return ctx
+}
