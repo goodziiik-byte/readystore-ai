@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { report } from "@/lib/report-data"
+import type { ReportModel } from "@/lib/report-model"
 import { SectionCard, StatusBadge, SectionHeading } from "@/components/report/ui"
 import { ArrowRight, FileText, Globe } from "lucide-react"
 
@@ -34,27 +35,27 @@ function ScoreGauge({ value, max }: { value: number; max: number }) {
   )
 }
 
-export function ReportHeader() {
+export function ReportHeader({ report: data = report, isSample = true }: { report?: ReportModel; isSample?: boolean }) {
   return (
     <div className="space-y-4">
       <SectionCard>
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-          <ScoreGauge value={report.score.value} max={report.score.max} />
+          <ScoreGauge value={data.score.value} max={data.score.max} />
           <div className="min-w-0">
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Scan report
             </span>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-              {report.score.label}
+              {data.score.label}
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground text-pretty">
-              {report.score.summary}
+              {data.score.summary}
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-5">
-          {report.highlights.map((h) => (
+          {data.highlights.map((h) => (
             <span
               key={h.label}
               className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-sm"
@@ -67,15 +68,15 @@ export function ReportHeader() {
 
         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
           <Globe className="size-3.5" />
-          <span className="font-mono">{report.store.fullUrl}</span>
+          <span className="font-mono">{data.store.fullUrl}</span>
           <span aria-hidden>·</span>
-          <span>{report.store.platform}</span>
+          <span>{data.store.platform}</span>
           <span aria-hidden>·</span>
-          <span>Scanned {report.store.scannedAt}</span>
+          <span>Scanned {data.store.scannedAt}</span>
         </div>
       </SectionCard>
 
-      <PdfCapture />
+      {isSample ? <PdfCapture /> : null}
     </div>
   )
 }

@@ -1,14 +1,15 @@
 import { report } from "@/lib/report-data"
+import type { ReportModel } from "@/lib/report-model"
 import { SectionCard, SectionHeading, Tag, STATE } from "@/components/report/ui"
 import { AlertTriangle, Check, CheckCircle2, ExternalLink, ShieldQuestion, X } from "lucide-react"
 
-export function Understanding() {
+export function Understanding({ report: data = report }: { report?: ReportModel }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <SectionCard>
         <SectionHeading title="AI can understand" />
         <ul className="space-y-2.5">
-          {report.canUnderstand.map((item) => (
+          {data.canUnderstand.map((item) => (
             <li key={item} className="flex gap-2.5 text-sm">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
               <span className="text-muted-foreground">{item}</span>
@@ -19,7 +20,7 @@ export function Understanding() {
       <SectionCard>
         <SectionHeading title="AI may miss" />
         <ul className="space-y-2.5">
-          {report.mayMiss.map((item) => (
+          {data.mayMiss.map((item) => (
             <li key={item} className="flex gap-2.5 text-sm">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
               <span className="text-muted-foreground">{item}</span>
@@ -31,12 +32,12 @@ export function Understanding() {
   )
 }
 
-export function FieldGrid() {
+export function FieldGrid({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
-      <SectionHeading title="How AI sees this store right now" meta={`${report.store.pagesAnalyzed} pages analyzed`} />
+      <SectionHeading title="How AI sees this store right now" meta={`${data.store.pagesAnalyzed} pages analyzed`} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {report.fields.map((f) => {
+        {data.fields.map((f) => {
           const s = STATE[f.state]
           const Icon = f.state === "pass" ? Check : f.state === "partial" ? s.icon : X
           return (
@@ -56,12 +57,12 @@ export function FieldGrid() {
   )
 }
 
-export function TopIssues() {
+export function TopIssues({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
-      <SectionHeading title="Top issues" meta={`${report.topIssues.length} found`} />
+      <SectionHeading title="Top issues" meta={`${data.topIssues.length} found`} />
       <ul className="space-y-3">
-        {report.topIssues.map((issue) => (
+        {data.topIssues.map((issue) => (
           <li key={issue.title} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-warning/30 bg-warning/[0.07] p-4">
             <div className="flex min-w-0 gap-3">
               <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
@@ -78,12 +79,12 @@ export function TopIssues() {
   )
 }
 
-export function ScoreBreakdown() {
+export function ScoreBreakdown({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
       <SectionHeading title="Score breakdown" />
       <div className="space-y-2.5">
-        {report.scoreBreakdown.map((row) => {
+        {data.scoreBreakdown.map((row) => {
           const pct = row.score * 10
           const tone = pct >= 80 ? STATE.pass : pct >= 50 ? STATE.partial : STATE.fail
           return (
@@ -101,12 +102,12 @@ export function ScoreBreakdown() {
   )
 }
 
-export function DiscoveredPages() {
+export function DiscoveredPages({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
       <SectionHeading title="Discovered pages" />
       <dl className="divide-y divide-border">
-        {report.discoveredPages.map((page) => (
+        {data.discoveredPages.map((page) => (
           <div key={page.label} className="flex items-center justify-between gap-4 py-2.5">
             <dt className="text-sm text-muted-foreground">{page.label}</dt>
             <dd className={`font-mono text-xs ${page.found ? "text-foreground" : "text-destructive"}`}>
@@ -126,12 +127,12 @@ export function DiscoveredPages() {
   )
 }
 
-export function Evidence() {
+export function Evidence({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
       <SectionHeading title="Scanned page evidence" meta="Safe GET only · no form submission" />
       <ul className="space-y-2">
-        {report.evidence.map((e, i) => (
+        {data.evidence.map((e, i) => (
           <li key={`${e.url}-${i}`} className="rounded-xl border border-border bg-background p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">

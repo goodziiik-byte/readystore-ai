@@ -1,29 +1,45 @@
 "use client"
 
-import { useEffect, type FormEvent } from "react"
+import { useEffect, useRef, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useScan } from "@/components/scan-context"
 import { useCopy } from "@/components/use-copy"
+import { defaultLocale } from "@/lib/i18n"
 import { ArrowRight, Search, ShieldCheck } from "lucide-react"
 
 export function Hero() {
-  const { runScan, status, url, setUrl } = useScan()
+  const { status, url, setUrl, locale } = useScan()
   const copy = useCopy()
+  const router = useRouter()
+  const autoScanStarted = useRef(false)
+
+  function reportHref(rawUrl: string) {
+    const path = locale === defaultLocale ? "/report" : `/${locale}/report`
+    return `${path}?domain=${encodeURIComponent(rawUrl.trim())}`
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const domain = params.get("domain") || params.get("url")
-    if (domain) setUrl(domain)
-  }, [setUrl])
+    if (!domain) return
+
+    setUrl(domain)
+
+    if (!autoScanStarted.current) {
+      autoScanStarted.current = true
+      router.replace(reportHref(domain))
+    }
+  }, [router, setUrl])
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    runScan(url)
-    document.getElementById("scan")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    if (!url.trim()) return
+    router.push(reportHref(url))
   }
 
   return (
-    <section className="relative overflow-hidden bg-navy text-navy-foreground">
+    <section id="scan" className="relative scroll-mt-20 overflow-hidden bg-navy text-navy-foreground">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.15]"

@@ -5,7 +5,6 @@ import { Hero } from "@/components/hero"
 import { PaymentContext } from "@/components/payment-context"
 import { ProblemSection } from "@/components/problem-section"
 import { ScanProvider } from "@/components/scan-context"
-import { ScanReport } from "@/components/scan-report"
 import { ScanScope } from "@/components/scan-scope"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
@@ -21,7 +20,6 @@ export function ReadystorePage({ locale }: { locale: Locale }) {
       <SiteHeader />
       <main>
         <Hero />
-        <ScanReport />
         <ProblemSection />
         <AiShopper />
         <ScanScope />

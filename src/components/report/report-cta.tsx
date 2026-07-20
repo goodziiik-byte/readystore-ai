@@ -2,9 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import { report } from "@/lib/report-data"
+import type { ReportModel } from "@/lib/report-model"
 import { ArrowRight, TrendingUp } from "lucide-react"
 
-export function ReportCta() {
+export function ReportCta({ report: data = report }: { report?: ReportModel }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-navy bg-navy p-6 text-navy-foreground shadow-sm sm:p-8">
       <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-foreground/10 px-3 py-1 text-xs font-medium text-lime">
@@ -29,7 +30,7 @@ export function ReportCta() {
       </div>
 
       <ol className="mt-8 grid gap-3 sm:grid-cols-2">
-        {report.planSteps.map((step, i) => (
+        {data.planSteps.map((step, i) => (
           <li key={step.title} className="rounded-xl border border-navy-foreground/10 bg-navy-foreground/[0.04] p-4">
             <div className="flex items-center gap-2">
               <span className="flex size-6 items-center justify-center rounded-full bg-lime text-xs font-semibold text-lime-foreground">

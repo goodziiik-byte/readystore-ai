@@ -1,13 +1,14 @@
 import { report } from "@/lib/report-data"
+import type { ReportModel } from "@/lib/report-model"
 import { SectionCard, SectionHeading, StatusBadge, Tag, STATE } from "@/components/report/ui"
 import { ArrowRight, CreditCard, Wrench } from "lucide-react"
 
-export function ProductSummary() {
+export function ProductSummary({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
-      <SectionHeading title="Product page summary" meta={`${report.productSummary.pages} product pages inspected`} />
+      <SectionHeading title="Product page summary" meta={`${data.productSummary.pages} product pages inspected`} />
       <div className="grid gap-4 sm:grid-cols-2">
-        {report.productSummary.metrics.map((m) => {
+        {data.productSummary.metrics.map((m) => {
           const pct = (m.score / m.max) * 100
           const tone = pct >= 90 ? STATE.pass : pct >= 60 ? STATE.partial : STATE.fail
           return (
@@ -29,12 +30,12 @@ export function ProductSummary() {
   )
 }
 
-export function ReadinessLayers() {
+export function ReadinessLayers({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
       <SectionHeading title="Readiness layers" meta="What is strong and what still blocks AI confidence" />
       <div className="space-y-3">
-        {report.layers.map((layer) => {
+        {data.layers.map((layer) => {
           const s = STATE[layer.state]
           return (
             <div key={layer.id} className={`rounded-xl border ${s.ring} ${s.tint} p-4`}>
@@ -61,30 +62,36 @@ export function ReadinessLayers() {
   )
 }
 
-export function PaymentVisibility() {
+export function PaymentVisibility({ report: data = report }: { report?: ReportModel }) {
+  const state = data.highlights.find((item) => item.label === "Payment provider")?.state ?? "partial"
+  const description =
+    state === "fail"
+      ? "Payment context was not clearly visible on public pages."
+      : "Payment context is visible on-site, but AI checkout handoff still requires a controlled plugin layer."
+
   return (
     <SectionCard>
       <SectionHeading title="Payment visibility" />
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/[0.06] p-4">
+      <div className={`flex flex-wrap items-center justify-between gap-3 rounded-xl border ${STATE[state].ring} ${STATE[state].tint} p-4`}>
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-success/10 text-success">
+          <span className={`flex size-10 items-center justify-center rounded-lg ${STATE[state].badge}`}>
             <CreditCard className="size-5" />
           </span>
           <div>
-            <p className="text-sm font-medium">Confirmed provider signal: {report.store.paymentProvider}</p>
+            <p className="text-sm font-medium">Provider signal: {data.store.paymentProvider}</p>
             <p className="text-sm text-muted-foreground">
-              Payment context is visible on-site, so AI can name a supported local method.
+              {description}
             </p>
           </div>
         </div>
-        <StatusBadge state="pass" label="Confirmed provider" />
+        <StatusBadge state={state} label={data.store.paymentProvider} />
       </div>
     </SectionCard>
   )
 }
 
-export function CheckoutCheck() {
-  const { checkout } = report
+export function CheckoutCheck({ report: data = report }: { report?: ReportModel }) {
+  const { checkout } = data
   return (
     <SectionCard>
       <SectionHeading title="AI checkout check" />
@@ -134,12 +141,12 @@ export function CheckoutCheck() {
   )
 }
 
-export function PriorityFixes() {
+export function PriorityFixes({ report: data = report }: { report?: ReportModel }) {
   return (
     <SectionCard>
-      <SectionHeading title="Fix these first" meta={`${report.priorityFixes.length} priority fixes`} />
+      <SectionHeading title="Fix these first" meta={`${data.priorityFixes.length} priority fixes`} />
       <ol className="space-y-3">
-        {report.priorityFixes.map((fix, i) => (
+        {data.priorityFixes.map((fix, i) => (
           <li key={fix.title} className="flex gap-4 rounded-xl border border-border bg-background p-4">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-navy text-sm font-semibold text-navy-foreground">
               {i + 1}
