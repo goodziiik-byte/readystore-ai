@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, type FormEvent } from "react"
+import { useEffect, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useScan } from "@/components/scan-context"
@@ -12,25 +12,23 @@ export function Hero() {
   const { status, url, setUrl, locale } = useScan()
   const copy = useCopy()
   const router = useRouter()
-  const autoScanStarted = useRef(false)
 
   function reportHref(rawUrl: string) {
+    const params = new URLSearchParams(
+      typeof window === "undefined" ? "" : window.location.search,
+    )
+    params.set("domain", rawUrl.trim())
+    params.delete("url")
+
     const path = locale === defaultLocale ? "/report" : `/${locale}/report`
-    return `${path}?domain=${encodeURIComponent(rawUrl.trim())}`
+    return `${path}?${params.toString()}`
   }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const domain = params.get("domain") || params.get("url")
-    if (!domain) return
-
-    setUrl(domain)
-
-    if (!autoScanStarted.current) {
-      autoScanStarted.current = true
-      router.replace(reportHref(domain))
-    }
-  }, [router, setUrl])
+    if (domain) setUrl(domain)
+  }, [setUrl])
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
