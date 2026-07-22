@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useScan } from "@/components/scan-context"
 import { useCopy } from "@/components/use-copy"
+import { trackClientEvent } from "@/lib/analytics"
 import { defaultLocale } from "@/lib/i18n"
 import { ArrowRight, Search, ShieldCheck } from "lucide-react"
 
@@ -33,6 +34,7 @@ export function Hero() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!url.trim()) return
+    trackClientEvent("scan_cta_clicked", { locale, domain: url.trim(), metadata: { source: "hero" } })
     router.push(reportHref(url))
   }
 

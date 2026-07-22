@@ -52,6 +52,23 @@ create table if not exists public.report_requests (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.events (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  domain text,
+  locale text default 'en',
+  market text,
+  session_id text,
+  path text,
+  referrer text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  utm_content text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create unique index if not exists leads_email_domain_unique
   on public.leads (lower(email), lower(coalesce(domain, '')));
 
@@ -63,6 +80,15 @@ create index if not exists leads_created_at_idx
 
 create index if not exists report_requests_status_created_at_idx
   on public.report_requests (status, created_at desc);
+
+create index if not exists events_name_created_at_idx
+  on public.events (name, created_at desc);
+
+create index if not exists events_utm_campaign_created_at_idx
+  on public.events (utm_campaign, created_at desc);
+
+create index if not exists events_domain_created_at_idx
+  on public.events (lower(domain), created_at desc);
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -82,10 +108,12 @@ execute function public.set_updated_at();
 alter table public.scans enable row level security;
 alter table public.leads enable row level security;
 alter table public.report_requests enable row level security;
+alter table public.events enable row level security;
 
 drop policy if exists "service role can manage scans" on public.scans;
 drop policy if exists "service role can manage leads" on public.leads;
 drop policy if exists "service role can manage report requests" on public.report_requests;
+drop policy if exists "service role can manage events" on public.events;
 
 create policy "service role can manage scans"
 on public.scans
@@ -101,6 +129,12 @@ with check (auth.role() = 'service_role');
 
 create policy "service role can manage report requests"
 on public.report_requests
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+create policy "service role can manage events"
+on public.events
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');

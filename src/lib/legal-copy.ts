@@ -16,6 +16,7 @@ export const privacyCopy: Record<Locale, LegalPageCopy> = {
     updated: "Last updated: July 14, 2026",
     sections: [
       { title: "What we collect", body: "When you scan a store, Readystore AI stores the submitted domain, public scan result, readiness score, detected signals, and timestamp. If you request a report, we also store your email address and report delivery status." },
+      { title: "Product analytics", body: "We store basic first-party event data such as page path, locale, submitted domain, UTM campaign parameters, scan status, and PDF request status so we can understand whether the scanner is working. We do not use third-party advertising pixels on the scanner flow." },
       { title: "What we scan", body: "We scan public storefront pages only. We do not log in, submit checkout forms, collect passwords, or access private store data." },
       { title: "How we use your email", body: "We use your email to send the requested PDF report, confirm early access, and announce the product launch. We do not sell your email or send unrelated marketing." },
       { title: "Subprocessors", body: "We use Vercel for hosting, Supabase for database storage, and Resend for transactional email delivery." },
@@ -27,6 +28,7 @@ export const privacyCopy: Record<Locale, LegalPageCopy> = {
     updated: "Actualizado: 14 de julio de 2026",
     sections: [
       { title: "Que recopilamos", body: "Cuando escaneas una tienda, Readystore AI guarda el dominio enviado, el resultado publico del scan, el readiness score, las senales detectadas y la fecha. Si pides un reporte, tambien guardamos tu email y el estado de entrega." },
+      { title: "Analitica de producto", body: "Guardamos eventos basicos first-party como ruta de pagina, idioma, dominio enviado, parametros UTM, estado del scan y estado de solicitud del PDF para entender si el scanner funciona. No usamos pixeles publicitarios de terceros en el flujo del scanner." },
       { title: "Que escaneamos", body: "Escaneamos solo paginas publicas de la tienda. No iniciamos sesion, no enviamos formularios de checkout, no recopilamos passwords y no accedemos a datos privados." },
       { title: "Como usamos tu email", body: "Usamos tu email para enviar el PDF solicitado, confirmar early access y anunciar el lanzamiento del producto. No vendemos tu email ni enviamos marketing no relacionado." },
       { title: "Subprocesadores", body: "Usamos Vercel para hosting, Supabase para base de datos y Resend para entrega de emails transaccionales." },
@@ -38,6 +40,7 @@ export const privacyCopy: Record<Locale, LegalPageCopy> = {
     updated: "Atualizado em: 14 de julho de 2026",
     sections: [
       { title: "O que coletamos", body: "Quando voce escaneia uma loja, o Readystore AI armazena o dominio enviado, o resultado publico do scan, o readiness score, os sinais detectados e a data. Se voce pedir um relatorio, tambem armazenamos seu email e o status de envio." },
+      { title: "Analitica de produto", body: "Armazenamos eventos basicos first-party como caminho da pagina, idioma, dominio enviado, parametros UTM, status do scan e status do pedido de PDF para entender se o scanner esta funcionando. Nao usamos pixels de publicidade de terceiros no fluxo do scanner." },
       { title: "O que escaneamos", body: "Escaneamos apenas paginas publicas da loja. Nao fazemos login, nao enviamos formularios de checkout, nao coletamos senhas e nao acessamos dados privados." },
       { title: "Como usamos seu email", body: "Usamos seu email para enviar o PDF solicitado, confirmar early access e anunciar o lancamento do produto. Nao vendemos seu email nem enviamos marketing nao relacionado." },
       { title: "Subprocessadores", body: "Usamos Vercel para hospedagem, Supabase para armazenamento de dados e Resend para entrega de emails transacionais." },
@@ -49,6 +52,7 @@ export const privacyCopy: Record<Locale, LegalPageCopy> = {
     updated: "Terakhir diperbarui: 14 Juli 2026",
     sections: [
       { title: "Data yang kami simpan", body: "Saat Anda melakukan scan toko, Readystore AI menyimpan domain yang dikirim, hasil scan publik, readiness score, sinyal yang terdeteksi, dan timestamp. Jika Anda meminta report, kami juga menyimpan alamat email dan status pengiriman report." },
+      { title: "Product analytics", body: "Kami menyimpan event first-party dasar seperti path halaman, locale, domain yang dikirim, parameter UTM, status scan, dan status request PDF agar kami tahu apakah scanner berjalan baik. Kami tidak memakai pixel iklan pihak ketiga di alur scanner." },
       { title: "Apa yang kami scan", body: "Kami hanya scan halaman publik storefront. Kami tidak login, tidak submit form checkout, tidak mengumpulkan password, dan tidak mengakses data private toko." },
       { title: "Bagaimana kami memakai email", body: "Kami memakai email Anda untuk mengirim PDF report, mengonfirmasi early access, dan mengumumkan product launch. Kami tidak menjual email Anda atau mengirim marketing yang tidak relevan." },
       { title: "Subprocessors", body: "Kami memakai Vercel untuk hosting, Supabase untuk database, dan Resend untuk pengiriman email transaksional." },

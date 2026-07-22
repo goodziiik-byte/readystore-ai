@@ -23,6 +23,7 @@ import {
   Understanding,
 } from "@/components/report/report-details"
 import { ReportCta } from "@/components/report/report-cta"
+import { trackClientEvent, utmFromSearchParams } from "@/lib/analytics"
 import { defaultLocale, type Locale } from "@/lib/i18n"
 import { report as sampleReport } from "@/lib/report-data"
 import { scanResultToReport, type ReportModel } from "@/lib/report-model"
@@ -56,6 +57,7 @@ export function ReportPageClient({ locale = defaultLocale }: { locale?: Locale }
   const [status, setStatus] = useState<ReportStatus>(domainFromUrl ? "loading" : "idle")
   const [error, setError] = useState("")
   const [liveReport, setLiveReport] = useState<ReportModel | null>(null)
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null)
 
   const isLive = status === "ready" && liveReport
   const report = useMemo(() => liveReport ?? sampleReport, [liveReport])
@@ -66,30 +68,42 @@ export function ReportPageClient({ locale = defaultLocale }: { locale?: Locale }
     if (!domainFromUrl) {
       setStatus("idle")
       setLiveReport(null)
+      setScanResult(null)
       setError("")
       return
     }
+
+    trackClientEvent("report_view", { locale, domain: domainFromUrl })
 
     const normalized = normalizeUrl(domainFromUrl)
     if (!normalized) {
       setStatus("error")
       setLiveReport(null)
+      setScanResult(null)
       setError("Enter a valid store URL, for example https://yourstore.com")
+      trackClientEvent("scan_error", {
+        locale,
+        domain: domainFromUrl,
+        metadata: { reason: "invalid_url" },
+      })
       return
     }
 
     const controller = new AbortController()
+    const normalizedUrl = normalized
 
     async function runScan() {
       setStatus("loading")
       setLiveReport(null)
+      setScanResult(null)
       setError("")
+      trackClientEvent("scan_started", { locale, domain: normalizedUrl })
 
       try {
         const response = await fetch("/api/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: normalized, locale }),
+          body: JSON.stringify({ url: normalizedUrl, locale, ...utmFromSearchParams(searchParams) }),
           signal: controller.signal,
         })
         const payload = await response.json()
@@ -98,12 +112,27 @@ export function ReportPageClient({ locale = defaultLocale }: { locale?: Locale }
           throw new Error(payload?.error?.message ?? "Unable to scan this store.")
         }
 
-        setLiveReport(scanResultToReport(payload as ScanResult))
+        const result = payload as ScanResult
+        setScanResult(result)
+        setLiveReport(scanResultToReport(result))
         setStatus("ready")
+        trackClientEvent("scan_success", {
+          locale,
+          domain: normalizedUrl,
+          metadata: {
+            score: result.score,
+            finalUrl: result.finalUrl,
+            payment: result.paymentVisibility.label,
+            woocommerce: result.platform.woocommerce,
+          },
+        })
       } catch (scanError) {
         if (controller.signal.aborted) return
         setStatus("error")
-        setError(scanError instanceof Error ? scanError.message : "Unable to scan this store.")
+        setScanResult(null)
+        const message = scanError instanceof Error ? scanError.message : "Unable to scan this store."
+        setError(message)
+        trackClientEvent("scan_error", { locale, domain: normalizedUrl, metadata: { message } })
       }
     }
 
@@ -117,11 +146,17 @@ export function ReportPageClient({ locale = defaultLocale }: { locale?: Locale }
     const normalized = normalizeUrl(input)
     if (!normalized) {
       setStatus("error")
+      setScanResult(null)
       setError("Enter a valid store URL, for example https://yourstore.com")
+      trackClientEvent("scan_error", { locale, domain: input, metadata: { reason: "invalid_url" } })
       return
     }
 
-    router.push(`${localePath(locale)}/report?domain=${encodeURIComponent(normalized)}`)
+    trackClientEvent("scan_cta_clicked", { locale, domain: normalized, metadata: { source: "report_page" } })
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("domain", normalized)
+    params.delete("url")
+    router.push(`${localePath(locale)}/report?${params.toString()}`)
   }
 
   return (
@@ -210,7 +245,7 @@ export function ReportPageClient({ locale = defaultLocale }: { locale?: Locale }
             <ScoreBreakdown report={report} />
             <DiscoveredPages report={report} />
             <Evidence report={report} />
-            <ReportCta report={report} />
+            <ReportCta report={report} result={scanResult} locale={locale} />
           </>
         ) : null}
       </main>

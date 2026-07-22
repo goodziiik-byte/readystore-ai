@@ -9,6 +9,24 @@ type LeadInput = {
   locale?: string;
   market?: string;
   source?: string;
+} & UTMInput;
+
+export type UTMInput = {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+};
+
+export type AnalyticsEventInput = UTMInput & {
+  name: string;
+  domain?: string;
+  locale?: string;
+  market?: string;
+  sessionId?: string;
+  path?: string;
+  referrer?: string;
+  metadata?: Record<string, unknown>;
 };
 
 type StoredLead = {
@@ -22,6 +40,17 @@ type ReportRequest = {
   id: string;
 };
 
+export type StoredAnalyticsEvent = {
+  name: string;
+  domain: string | null;
+  locale: string | null;
+  market: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  created_at: string;
+};
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SECRET_KEY;
 
@@ -32,7 +61,7 @@ export function integrationsConfigured() {
   };
 }
 
-export async function persistScan(result: ScanResult, locale: Locale = defaultLocale) {
+export async function persistScan(result: ScanResult, locale: Locale = defaultLocale, attribution: UTMInput = {}) {
   if (!supabaseUrl || !supabaseServiceKey) {
     return;
   }
@@ -50,6 +79,7 @@ export async function persistScan(result: ScanResult, locale: Locale = defaultLo
       result,
       source: "scanner",
       locale,
+      ...normalizeAttribution(attribution),
     },
     prefer: "resolution=merge-duplicates",
     onConflict: "id",
@@ -78,6 +108,7 @@ export async function createLeadAndReportRequest(input: LeadInput) {
       market: input.market,
       source: input.source ?? "scanner_report",
       waitlist_status: "joined",
+      ...normalizeAttribution(input),
     },
     prefer: "return=representation",
   }))[0];
@@ -95,6 +126,37 @@ export async function createLeadAndReportRequest(input: LeadInput) {
   });
 
   return { domain, lead, reportRequest: reportRequests[0] };
+}
+
+export async function trackEvent(input: AnalyticsEventInput) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return;
+  }
+
+  await supabaseRequest("events", {
+    method: "POST",
+    body: {
+      name: input.name.slice(0, 80),
+      domain: input.domain ? domainFromUrl(input.domain) : undefined,
+      locale: input.locale ?? defaultLocale,
+      market: input.market,
+      session_id: input.sessionId,
+      path: input.path?.slice(0, 500),
+      referrer: input.referrer?.slice(0, 500),
+      ...normalizeAttribution(input),
+      metadata: input.metadata ?? {},
+    },
+  });
+}
+
+export async function getRecentAnalyticsEvents(limit = 2000) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return [];
+  }
+
+  return supabaseGet<StoredAnalyticsEvent[]>(
+    `events?select=name,domain,locale,market,utm_source,utm_medium,utm_campaign,created_at&order=created_at.desc&limit=${Math.min(limit, 5000)}`,
+  );
 }
 
 export async function markReportSent(reportRequestId: string) {
@@ -208,11 +270,12 @@ async function supabaseRequest<T = unknown>(
     throw new Error(`Supabase request failed: ${body}`);
   }
 
-  if (response.status === 204) {
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
     return undefined as T;
   }
 
-  return response.json() as Promise<T>;
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 async function supabaseGet<T = unknown>(path: string): Promise<T> {
@@ -263,6 +326,20 @@ function domainFromUrl(url: string) {
   } catch {
     return url.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] || "unknown-domain";
   }
+}
+
+function normalizeAttribution(input: UTMInput) {
+  return {
+    utm_source: cleanUtm(input.utm_source),
+    utm_medium: cleanUtm(input.utm_medium),
+    utm_campaign: cleanUtm(input.utm_campaign),
+    utm_content: cleanUtm(input.utm_content),
+  };
+}
+
+function cleanUtm(value?: string) {
+  if (!value) return undefined;
+  return value.slice(0, 200);
 }
 
 function escapeHtml(value: string) {
