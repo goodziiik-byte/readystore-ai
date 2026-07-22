@@ -21,6 +21,7 @@ export function SiteHeader() {
     { label: "AI shopper", href: "#simulation" },
     { label: copy.marketing.safety.scanTitle, href: "#scope" },
     { label: copy.report.summary.payment, href: "#payments" },
+    { label: "Plugin", href: "/wordpress-plugin" },
   ]
 
   return (

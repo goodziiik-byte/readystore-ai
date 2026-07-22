@@ -38,6 +38,9 @@ export function SiteFooter({ locale = defaultLocale }: { locale?: Locale }) {
             <a href={`${localePrefix}/terms`} className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
               {copy.footer.terms}
             </a>
+            <a href="/wordpress-plugin" className="text-navy-foreground/70 transition-colors hover:text-navy-foreground">
+              WordPress plugin
+            </a>
           </div>
         </div>
 
